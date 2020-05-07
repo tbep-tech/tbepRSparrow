@@ -1,3 +1,3 @@
 # README
 
-Materials for working with RSparrow in Tampa Bay
+R package for running Sparrow in Tampa Bay
