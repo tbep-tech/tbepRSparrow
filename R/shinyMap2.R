@@ -191,28 +191,29 @@ shinyMap2<-function(
                 callModule(handsOnMod, "nsSiteAttr-nsCosmetic", DF = as.data.frame(scenarioRtables$cosmeticSite))
          }
      })
-#interactive plot
-     output$plotOne  <- renderPlot({
-       p<-eventReactive(input$goPlot, {
+
+     #interactive plot
+     p <- eventReactive(input$goPlot, {
        #run plot
-       goShinyPlot(input, output, session, choices,"goPlot",
-                             path_results,file_sum,path_gis,map_uncertainties,BootUncertainties,
-                             data_names,mapping.input.list,
-                             #predict.list,
-                             subdata,SelParmValues,
-                             #site attr
-                             sitedata,#estimate.list,Mdiagnostics.list,
-                             #scenarios
-                             scenario_name,JacobResults,
-                             ConcFactor,DataMatrix.list,
-                             reach_decay_specification,reservoir_decay_specification,
-                             #scenarios out
-                             add_vars,csv_decimalSeparator,csv_columnSeparator,
-                             #batchError
-                             batch_mode,ErrorOccured)
-       })()
        
-     })#end renderplot
+       goShinyPlot(input, output, session, choices,"goPlot",
+                   path_results,file_sum,path_gis,map_uncertainties,BootUncertainties,
+                   data_names,mapping.input.list,
+                   #predict.list,
+                   subdata,SelParmValues,
+                   #site attr
+                   sitedata,#estimate.list,Mdiagnostics.list,
+                   #scenarios
+                   scenario_name,JacobResults,
+                   ConcFactor,DataMatrix.list,
+                   reach_decay_specification,reservoir_decay_specification,
+                   #scenarios out
+                   add_vars,csv_decimalSeparator,csv_columnSeparator,
+                   #batchError
+                   batch_mode,ErrorOccured)
+       
+     })
+     output$plotOne <- renderPlot(p())
 
      #pdf output
      observeEvent(input$savePDF, {
