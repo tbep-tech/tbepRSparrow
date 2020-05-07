@@ -1,0 +1,37 @@
+getNumSett<-function(){
+numericSettings<-c("minimum_headwater_site_area",
+                   "minimum_reaches_separating_sites",
+                   "minimum_site_incremental_area",
+                   "s_offset",
+                   "pvalidate",
+                   "biters",
+                   "iseed",
+                   "ConcFactor",
+                   "lat_limit",
+                   "lon_limit",
+                   "scenario_all_factors",
+                   "class_landuse_percent",
+                   
+                   "predictionTitleSize",
+                   "predictionLegendSize",
+                   "predictionClassRounding",
+                   "lineWidth",
+                   "residual_map_breakpoints",
+                   "ratio_map_breakpoints",
+                   "residualTitleSize",
+                   "residualLegendSize",
+                   "residualPointStyle",
+                   "residualPointSize_breakpoints",
+                   "residualPointSize_factor",
+                   "siteAttrTitleSize",
+                   "siteAttrLegendSize",
+                   "siteAttrClassRounding",
+                   "siteAttr_mapPointStyle",
+                   "siteAttr_mapPointSize",
+                   "diagnosticPlotPointSize",
+                   "diagnosticPlotPointStyle",
+                   
+                   "confInterval"
+                   )
+return(numericSettings)
+}
