@@ -29,7 +29,10 @@ installPackages <- function(if_install_packages,path_master){
                 "rhandsontable",
                 "gear", 
                 "car",
-                "dplyr"
+                "dplyr", 
+                "sf", 
+                "mapview", 
+                "leaflet"
                 )
     assign("pkgs",pkgs,envir = .GlobalEnv)
     for (p in pkgs){

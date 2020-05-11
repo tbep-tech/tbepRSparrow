@@ -546,7 +546,7 @@ MAPCOLORS <- Mcolors[qvars]
         }
 
         if (existGeoLines==TRUE){
-          plot(GeoLines,col=1,lwd=0.1,xlim=lon_limit,ylim=lat_limit,bg = predictionMapBackground)
+          sp::plot(GeoLines,col=1,lwd=0.1,xlim=lon_limit,ylim=lat_limit,bg = predictionMapBackground)
         }
         
         # obtain variable settings
@@ -669,7 +669,7 @@ MAPCOLORS <- Mcolors[qvars]
             pdf(filename)
           }
           if (existGeoLines==TRUE){
-            plot(GeoLines,col=1,lwd=0.1,xlim=lon_limit,ylim=lat_limit,bg = predictionMapBackground)
+            sp::plot(GeoLines,col=1,lwd=0.1,xlim=lon_limit,ylim=lat_limit,bg = predictionMapBackground)
           }
           
           # obtain variable settings

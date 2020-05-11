@@ -47,6 +47,10 @@ shinyMap2<-function(
   library(shinyWidgets)
   library(stringr)
   library(rhandsontable)
+  library(leaflet)
+  library(sf)
+  library(mapview)
+  library(magrittr)
   
   
   #load predicitons if available
@@ -99,8 +103,10 @@ shinyMap2<-function(
                      
                      #top level user input
                      selectInput("batch","Output Mode",c("Interactive","Batch")),
+                     selectInput("mapFormat", "Map Format", c('Dynamic', 'Static')),
+          
                      selectInput("mapType","Map Type",mapTypeChoices),
- 
+                    
                      #Stream and Catchment arguments
                      streamCatch("nsStreamCatch", input, choices, map_uncertainties),
                      
@@ -127,11 +133,19 @@ shinyMap2<-function(
                        actionButton("batchPlot","Save Plot(s)")      
                      )
                      ),
+
         mainPanel(width = 6,
-         # verbatimTextOutput("txtOut"),
-          plotOutput("plotOne", width=900,height=900)
+          conditionalPanel(
+            condition = "input.mapFormat=='Static'",
+            plotOutput("plotOne", width=900,height=900)
+          ),
+          conditionalPanel(
+            condition = "input.mapFormat=='Dynamic'",
+            leafletOutput("plotTwo", height = 800)
+          )
         )
-        )))#end ui function
+
+        ))) #end ui function
     ,
 
     ################################################################
@@ -195,7 +209,7 @@ shinyMap2<-function(
      #interactive plot
      p <- eventReactive(input$goPlot, {
        #run plot
-       
+
        goShinyPlot(input, output, session, choices,"goPlot",
                    path_results,file_sum,path_gis,map_uncertainties,BootUncertainties,
                    data_names,mapping.input.list,
@@ -213,8 +227,17 @@ shinyMap2<-function(
                    batch_mode,ErrorOccured)
        
      })
-     output$plotOne <- renderPlot(p())
+     
+     observe({
+     
+       if(input$mapFormat == 'Static')
+         output$plotOne <- renderPlot(p())
 
+       if(input$mapFormat == 'Dynamic')
+         output$plotTwo <- renderLeaflet(p())
+       
+     })
+    
      #pdf output
      observeEvent(input$savePDF, {
        goShinyPlot(input, output, session, choices,"savePDF",

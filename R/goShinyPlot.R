@@ -83,18 +83,36 @@ goShinyPlot<-function(input, output, session, choices, button,
      # print(compiledInput)
      # compiledInput<-convertHotTables(compiledInput)
       mapScenarios<-FALSE
-      predictMaps(compiledInput,NA,output_map_type,TRUE,
-                  path_results,file_sum,path_gis,
-                  data_names,mapping.input.list,
-                  subdata,
-                  #scenarios
-                  mapScenarios,
-                  scenario_map_list,
-                  predictScenarios.list,
-                  scenario_name,
-                  batch_mode,ErrorOccured)
-      
 
+      if(input$mapFormat == 'Static'){
+   
+        out <- predictMaps(compiledInput,NA,output_map_type,TRUE,
+                    path_results,file_sum,path_gis,
+                    data_names,mapping.input.list,
+                    subdata,
+                    #scenarios
+                    mapScenarios,
+                    scenario_map_list,
+                    predictScenarios.list,
+                    scenario_name,
+                    batch_mode,ErrorOccured)
+      
+        return(out)
+      }
+      
+      if(input$mapFormat == 'Dynamic'){
+        out <- predictMapsleaflet(compiledInput,NA,output_map_type,TRUE,
+                    path_results,file_sum,path_gis,
+                    data_names,mapping.input.list,
+                    subdata,
+                    #scenarios
+                    mapScenarios,
+                    scenario_map_list,
+                    predictScenarios.list,
+                    scenario_name,
+                    batch_mode,ErrorOccured)
+        return(out)
+      }
       
     }else if (input$mapType=="Site Attributes"){
       showModal(dataModal())
