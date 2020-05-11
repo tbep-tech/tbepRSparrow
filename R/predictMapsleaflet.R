@@ -549,10 +549,10 @@ predictMapsleaflet<-function(#Rshiny
             # legend("bottomleft",break1[k][[1]],lty=nlty,cex=predictionLegendSize,title=mapunits.list[k],
             #        bg=predictionLegendBackground,lwd=nlwd, col=Mcolors[1:length(break1[k][[1]])], bty="o")
             # 
- 
+
             tomap <- st_as_sf(polyShape)
             tomap <- st_transform(tomap, crs = 4326)
-
+         
             # ttl <- master_map_list[k]
             out <- mapview(tomap, fill = F, homebutton = F, popup = NULL, legend = F, viewer.suppress = F) %>% 
               .@map %>% 
@@ -564,11 +564,11 @@ predictMapsleaflet<-function(#Rshiny
                 color = 'grey', 
                 weight = 1, 
                 layerId = ~waterid, 
-                fillColor = ~MAPCOLORS1,
+                fillColor = ~col2hex(MAPCOLORS1),
                 fillOpacit = 0.9,
                 label = ~paste(waterid, MAPCOLORS1)
               ) %>% 
-              addLegend("bottomleft", labels = break1[[1]], colors = Mcolors,
+              addLegend("bottomleft", labels = break1[[1]], colors = col2hex(Mcolors),
                         title = master_map_list, opacity = 1)
 
             return(out)
