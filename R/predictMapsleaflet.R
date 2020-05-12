@@ -524,10 +524,10 @@ predictMapsleaflet<-function(#Rshiny
                 data = tomap, 
                 opacity = 1,
                 weight = 1,
-                color = ~MAPCOLORS1,
+                color = ~col2hex(MAPCOLORS1),
                 label = ~paste(waterid, MAPCOLORS1)
               ) %>% 
-              addLegend("bottomleft", labels = break1[[1]], colors = Mcolors,
+              addLegend("bottomleft", labels = break1[[1]], colors = col2hex(Mcolors),
                         title = master_map_list, opacity = 1)
               
             return(out)
