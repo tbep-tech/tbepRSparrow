@@ -114,7 +114,7 @@ shinyMap2<-function(
                      shinySiteAttr("nsSiteAttr",input,choices),
                      
                      #scenarios arguments
-                     shinyScenarios("nsScenarios",input),
+                     shinyScenarios("nsScenarios",input, scenario_name),
                      
                      #output shape file ifBatch
                      shapeFunc("nsBatch",input),
