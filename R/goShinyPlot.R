@@ -15,7 +15,7 @@ goShinyPlot<-function(input, output, session, choices, button,
                             batch_mode,ErrorOccured){
  
  # p<-eventReactive(button, {
- 
+ browser()
     compileALL<-compileALL(input, output, session, path_results, choices)
     compiledInput<-compileALL$compiledInput
     compiledInput<-convertHotTables(compiledInput)
