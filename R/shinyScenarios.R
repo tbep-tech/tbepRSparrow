@@ -1,4 +1,4 @@
-shinyScenarios<-function(id, input){
+shinyScenarios<-function(id, input, scenario_name){
   ns<-NS(id)
 
   conditionalPanel(
