@@ -1,8 +1,17 @@
-startEndmodifySubdata<-function(data_names,class_landuse,batch_mode,ErrorOccured){
-  if (ErrorOccured=="no"){
-    tryIt<-try({
- 
+#'@title startEndmodifySubdata
+#'@description if userModifyData.R is not run, this function creates the subdata object and 
+#'            stops execution if any missing class_landuse found \\cr \\cr
+#'Executed By: startModelRun.R \\cr
+#'@param data_names data.frame of variable metadata from data_Dictionary.csv file
+#'@param class_landuse character vector of class_landuses from sparrow_control.R
+#'@param data1 input data (data1)
+#'@return `subdata` data.frame input data (subdata)
 
+
+
+startEndmodifySubdata<-function(data_names,class_landuse, data1){
+  
+  
   #check for missing landuse class
   missingLanduseClass<-class_landuse[which(!class_landuse %in% data_names$sparrowNames)]
   if (length(na.omit(missingLanduseClass))!=0){
@@ -12,16 +21,8 @@ startEndmodifySubdata<-function(data_names,class_landuse,batch_mode,ErrorOccured
     }
   }
   
-
-    },TRUE)#end try
-    
-    if (class(tryIt)=="try-error"){#if an error occured
-      if(ErrorOccured=="no"){
-        errorOccurred("startEndmodifySubdata.R",batch_mode)
-      }
-    }else{#if no error
-        return(subdata)
-    }#end if error
-    
-  }#test if previous error
+  
+  
+  return(data1)
+  
 }#end function

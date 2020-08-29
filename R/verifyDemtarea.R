@@ -1,44 +1,56 @@
 #'@title verifyDemtarea
-#'@description verify demtarea and output results as csv and plot
+#'@description Performs a consistency check on values for the total drainage area system 
+#'            variable, 'demtarea', based on the 'if_verify_demtarea' control setting (section 2 of the control 
+#'            script). The check compares values of the newly-created 'demtarea' (using the 'hydseq.R' 
+#'            function) with user-supplied values of 'demtarea', and outputs the results to CSV and PDF files. \\cr \\cr
+#'Executed By: createVerifyReachAttr.R \\cr
+#'Executes Routines: \\itemize\{\\item checkDrainageareaErrors.R
+#'             \\item unPackList.R\} \\cr
 #'@param if_verify_demtarea specify whether or not to verify demtarea
-#'@param data1 data1 object
-#'@param compareData data with new demtarea values (contains waterid, hydseq, demtarea, and headflag)
-#'@param path_results path to model subdirectory
-#'@param file_sum run_id for current model
-#'@param path_gis path to gis directory
-#'@param mapping.input.list mapping.input.list from control file
-#'@param csv_decimalSeparator decimal separator for csv output
-#'@param csv_columnSeparator column separator for csv output
-#'@param batch_mode yes/no indicating whether or not batch processing is used
-#'@param ErrorOccured yes/no indicating if a previous error has occured `ErrorOccured<-"no"`
+#'@param data1 input data (data1)
+#'@param compareData data.frame of reach verification attributes to compare with the users 
+#'       data1 file
+#'@param file.output.list list of control settings and relative paths used for input and 
+#'                        output of external files.  Created by `generateInputList.R`
+#'@param mapping.input.list Named list of sparrow_control settings for mapping: lat_limit, 
+#'                          lon_limit, master_map_list, lineShapeName, lineWaterid, 
+#'                          polyShapeName, ployWaterid, LineShapeGeo, LineShapeGeo, CRStext, 
+#'                          convertShapeToBinary.list, map_siteAttributes.list, 
+#'                          residual_map_breakpoints, site_mapPointScale, 
+#'                          if_verify_demtarea_maps
+#'@param batch_mode yes/no character string indicating whether RSPARROW is being run in batch 
+#'       mode
+
+
 
 verifyDemtarea<-function(if_verify_demtarea,data1,compareData,
                          #for checkDrainageErrors
-                         path_results,file_sum,path_gis,mapping.input.list,
-                         csv_decimalSeparator, csv_columnSeparator,
+                         file.output.list,mapping.input.list,
                          #for both
-                         batch_mode, ErrorOccured){
-  if (ErrorOccured=="no"){
-    tryIt<-try({ 
-
+                         batch_mode){
+  
+  
+  unPackList(lists = list(file.output.list = file.output.list),
+             parentObj = list(NA)) 
+  
   if (if_verify_demtarea=="yes"){
     
-  # Select reaches to be included in the analysis (exclude coastal shorelines)
-  # NAs removed first or will create NA records in 'sub1'
-  for (c in c("termflag","fnode","tnode","demiarea","demtarea")){
-    eval(parse(text = paste("data1$",c,"<-ifelse(is.na(data1$",c,"),0,data1$",c,")",sep="")))
-  }
-  
-  sub1 <- data1[(data1$fnode > 0 & data1$tnode > 0 & data1$termflag != 3), ]
-  
-  #get compareData as vectors
-  waterid<-compareData$waterid
-  hydseq<-compareData$hydseq
-  demtarea<-compareData$demtarea
-  headflag<-compareData$headflag
-  
-  #verifyDemtarea
-
+    # Select reaches to be included in the analysis (exclude coastal shorelines)
+    # NAs removed first or will create NA records in 'sub1'
+    for (c in c("termflag","fnode","tnode","demiarea","demtarea")){
+      eval(parse(text = paste("data1$",c,"<-ifelse(is.na(data1$",c,"),0,data1$",c,")",sep="")))
+    }
+    
+    sub1 <- data1[(data1$fnode > 0 & data1$tnode > 0 & data1$termflag != 3), ]
+    
+    #get compareData as vectors
+    waterid<-compareData$waterid
+    hydseq<-compareData$hydseq
+    demtarea<-compareData$demtarea
+    headflag<-compareData$headflag
+    
+    #verifyDemtarea
+    
     demtarea_new <- demtarea
     hydseq_new <- hydseq
     headflag_new <- headflag
@@ -47,9 +59,9 @@ verifyDemtarea<-function(if_verify_demtarea,data1,compareData,
     hs_data <- hs_data[hs_data$waterid != 0, ] # eliminate 0 cases where vector dimension max > no. reaches
     sub1 <- merge(sub1,hs_data,by="waterid",all.y=TRUE,all.x=TRUE)
     sub1.plot <- qplot(sub1$demtarea,sub1$demtarea_new,log="xy",
-                     xlab="Pre-calculated Total Drainage Area",ylab="Newly-calculated Total Drainage Area",
-                     geom=c("point"),main="Comparison of Total Drainage Areas")
-
+                       xlab="Pre-calculated Total Drainage Area",ylab="Newly-calculated Total Drainage Area",
+                       geom=c("point"),main="Comparison of Total Drainage Areas")
+    
     
     sub1$AreaRatio_NewOld <- sub1$demtarea_new / sub1$demtarea
     sub1$Headflag_NewOld <- as.character(ifelse(sub1$headflag == sub1$headflag_new,"  ","DIFFER"))
@@ -60,6 +72,8 @@ verifyDemtarea<-function(if_verify_demtarea,data1,compareData,
         paste("Number of reaches with different (>1%) total drainage areas (see records in DAreaFailCheckObj): ",
               nrow(DAreaFailCheckObj),sep="")
       
+    }else{
+      DAreaFailCheckMessage<-" "
     }
     
     #output results
@@ -76,29 +90,19 @@ verifyDemtarea<-function(if_verify_demtarea,data1,compareData,
     }
     if(DAreaFailCheckMessage!=" ") {    # Map mis-matched reaches and diagnostics
       if(nrow(DAreaFailCheckObj) > 0) {
-        if (ErrorOccured=="no"){
-          message("Writing results from drainage area comparisons (CSV, PDF maps) in estimate directory...")
-        }#if no error
-        checkDrainageareaErrors(path_results,file_sum,path_gis,mapping.input.list,
-                                sub1.plot,DAreaFailCheckObj,data1, csv_decimalSeparator, csv_columnSeparator,
-                                batch_mode,ErrorOccured)
+        
+        message("Writing results from drainage area comparisons (CSV, HTML maps) in estimate directory...")
+        
+        checkDrainageareaErrors(file.output.list,mapping.input.list,
+                                #sub1.plot,
+                                DAreaFailCheckObj,data1, 
+                                batch_mode)
       }
     }
     
   }#end if_verify 
-
   
-    },TRUE)#end try
-    
-    if (class(tryIt)=="try-error"){#if an error occured
-      if(ErrorOccured=="no"){
-        errorOccurred("verifyDemtarea.R",batch_mode)
-      }
-    }else{#if no error
-
-    }#end if error
-    
-  }#test if previous error
+  
   
   
 }#end function

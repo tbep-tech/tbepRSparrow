@@ -1,30 +1,24 @@
-# fixDupLatLons.R
-#
-# Adds small random increment to duplicate latitudes and longitudes
-#
-#####################################################################
-fixDupLatLons <- function(x,batch_mode,ErrorOccured){
-  if (ErrorOccured=="no"){
-    tryIt<-try({ 
- 
-  xd <- duplicated(x)
+#'@title fixDupLatLons
+#'@description Adds a small random increment of decimal degrees to the latitude and longitude 
+#'            for monitoring sites with duplicate values. \\cr \\cr
+#'Executed By: diagnosticSpatialAutoCorr.R \\cr
+#'@param latLon numeric vector of latitude or longitude values
+#'@return `x` latitude or longitude vector with small random increment added to duplicate 
+#'            latitudes and longitudes
+
+
+
+fixDupLatLons <- function(latLon){
+  
+  
+  xd <- duplicated(latLon)
   for (i in 1:length(xd)) {
     if(xd[i]==TRUE) {
-      x[i] <- x[i]+runif(1,min=0.000001,max=0.000009)
+      latLon[i] <- latLon[i]+runif(1,min=0.000001,max=0.000009)
     }
   }
- 
   
-    },TRUE)#end try
-    
-    if (class(tryIt)=="try-error"){#if an error occured
-      if(ErrorOccured=="no"){
-        errorOccurred("fixDupLatLons.R",batch_mode)
-      }
-    }else{#if no error
- return(x)
-    }#end if error
-    
-  }#test if previous error
+  return(latLon)
+  
 }#end function
 

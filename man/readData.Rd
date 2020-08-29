@@ -4,18 +4,17 @@
 \alias{readData}
 \title{readData}
 \usage{
-readData(path, input_data_fileName, csv_decimalSeparator, csv_columnSeparator,
-  batch_mode, ErrorOccured)
+readData(file.output.list, input_data_fileName)
 }
 \arguments{
-\item{path}{this is users path_data automatically found}
-
-\item{input_data_fileName}{this is the users fileName for the input data, if csv must include the file extension}
-
-\item{batch_mode}{yes/no indicating whether or not batch processing is used}
-
-\item{ErrorOccured}{yes/no indicating if a previous error has occured \code{ErrorOccured<-"no"}}
+\item{input_data_fileName}{name of users data1 file}
+}
+\value{
+\code{data1} input data (data1)
 }
 \description{
-This reads the users input data (either .csv or binary format)
+Reads the users input data (either .csv or binary format) \cr \cr
+Executed By: \itemize{\item createInitialDataDictionary.R
+\item dataInputPrep.R} \cr
+Executes Routines: unPackList.R \cr
 }

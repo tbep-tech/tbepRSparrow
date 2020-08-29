@@ -7,15 +7,10 @@
 replaceNAs(listColumns)
 }
 \arguments{
-\item{listColumns}{A named list of variables in which to replace NAs.
-Recommend using \code{named.list()} to generate a named list of variables.}
+\item{listColumns}{a named list of variables in which to replace NAs.}
 }
 \description{
-Replace all NAs with 0's. Output is saved to parent.frame().
+Replaces all NAs with 0's. Output is saved to parent.frame(). \cr \cr
+Executed By: \itemize{\item applyUserModify.R
+\item mapSiteAttributes.R} \cr
 }
-\examples{
-x<-c(1,2,3)
-y<-c(NA,4,5)
-replaceNAs(named.list(x,y))
-}
-\keyword{external}

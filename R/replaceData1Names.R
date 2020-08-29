@@ -1,31 +1,35 @@
-#
-# replaceData1Names.R
-#
-#####################################################
-# replace user-assigned variable names in the DATA1 object (datalstin) with the required names (datalstreq)
+#'@title replaceData1Names
+#'@description replaces data1UserNames with sparrowNames in the data1 object from the 
+#'            dataDictionary.csv control file \\cr \\cr
+#'Executed By: dataInputPrep.R \\cr
+#'Executes Routines: getVarList.R \\cr
+#'@param data_names data.frame of variable metadata from data_Dictionary.csv file
+#'@param data1 input data (data1)
+#'@return `data1` input data (data1) with data1UserNames replaced with sparrowNames
 
-replaceData1Names <- function(data_names,data1,batch_mode,ErrorOccured) {
-  if (ErrorOccured=="no"){
-    tryIt<-try({ 
-   
+
+
+replaceData1Names <- function(data_names,data1) {
+  
+  
   datalstreq <- data_names$sparrowNames
   datalstin <- data_names$data1UserNames 
   datalstunits <- data_names$varunits
-
-# replace variable names in the DATA1 object (datalstin) with the required names (datalstreq)
+  
+  # replace variable names in the DATA1 object (datalstin) with the required names (datalstreq)
   # assists with cases where DATA1 is missing a required or user-specified variable 
   #  (a warning will be printed for this variable with all NAs inserted)
   data1_names <- names(data1) 
   for (i in 1:length(datalstreq)) {  
     ick <- 0
     for (j in 1:length(data1_names)) {
-     if(!is.na(datalstin[i])) {
-       if(datalstin[i] == data1_names[j]) {ick<-ick+1}   # compare required name in DATA1 file with actual DATA1 names
-     }
+      if(!is.na(datalstin[i])) {
+        if(datalstin[i] == data1_names[j]) {ick<-ick+1}   # compare required name in DATA1 file with actual DATA1 names
+      }
     }
     if(ick == 0) {
-     dname <- paste("data1$",datalstreq[i],"<-NA",sep="") 
-     eval(parse(text=dname))  # place missing variable in data1 object
+      dname <- paste("data1$",datalstreq[i],"<-NA",sep="") 
+      eval(parse(text=dname))  # place missing variable in data1 object
     }
   }
   
@@ -43,17 +47,17 @@ replaceData1Names <- function(data_names,data1,batch_mode,ErrorOccured) {
   data1$station_id <- as.character(data1$station_id)
   data1$station_name <- as.character(data1$station_name)
   data1$rchname <- as.character(data1$rchname)
-
-# If 'calsites' missing or has all NAs/0s, then set calibration site index to default setting:  '1' for 'depvar>0'
   
-   if(("calsites" %in% names(data1)) == TRUE) {    # index present
-      if(all(is.na(data1$calsites) == TRUE) | all(data1$calsites == 0) == TRUE) { # all values of index equal NAs or 0
-         data1$calsites <- ifelse(data1$depvar > 0,1,0)
-      }
-   } else {   # index missing; set to default
-        data1$calsites <- ifelse(data1$depvar > 0,1,0)
-   }
-    
+  # If 'calsites' missing or has all NAs/0s, then set calibration site index to default setting:  '1' for 'depvar>0'
+  
+  if(("calsites" %in% names(data1)) == TRUE) {    # index present
+    if(all(is.na(data1$calsites) == TRUE) | all(data1$calsites == 0) == TRUE) { # all values of index equal NAs or 0
+      data1$calsites <- ifelse(data1$depvar > 0,1,0)
+    }
+  } else {   # index missing; set to default
+    data1$calsites <- ifelse(data1$depvar > 0,1,0)
+  }
+  
   
   #if names in required/fixed list make tolower()
   names(data1)[which(tolower(names(data1)) %in% as.character(getVarList()$varList))]<-tolower(names(data1)[which(tolower(names(data1)) %in% as.character(getVarList()$varList))])
@@ -70,25 +74,9 @@ replaceData1Names <- function(data_names,data1,batch_mode,ErrorOccured) {
   origWaterid<-data.frame(waterid_for_RSPARROW_mapping = data1$waterid)
   data1<-cbind(data1,origWaterid)
   
-
-    },TRUE)#end try
-    
-    if (class(tryIt)=="try-error"){#if an error occured
-      if(ErrorOccured=="no"){
-            ErrorOccured<-"yes"
-      cat("\n \n")
-      message(paste("AN ERROR OCCURRED IN PROCESSING replaceData1Names.R\n",
-                    geterrmessage(),"RUN EXECUTION TERMINATED.",sep=""))
-      if (batch_mode=="yes"){#if batch output message to log
-        cat(" \nAN ERROR OCCURRED IN PROCESSING replaceData1Names.R\n",
-            geterrmessage(),"RUN EXECUTION TERMINATED.",sep="")
-      }}
-      assign("ErrorOccured","yes",envir = .GlobalEnv)
-      assign("ErrorOccured","yes",envir = parent.frame())
-    }else{#if no error
+  
+  
   return(data1)
-    }#end if error
-    
-  }#test if previous error
+  
 }#end function
 

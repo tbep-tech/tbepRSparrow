@@ -1,18 +1,22 @@
 #'@title compileInput
-#'@description Shiny server function updates compiles input from namespace indicated in callModule
-#'@param input Shiny input selections
-#'@param output Shiny output
-#'@param session Shiny session
-#'@return invalue a list of all elements in namespace with the exception of button values like selectAll, clearAll
+#'@description Shiny server function that updates compiles input from namespace indicated in 
+#'            callModule function call \\cr \\cr
+#'Executed By: \\itemize\{\\item compileALL.R
+#'             \\item testCosmetic.R\} \\cr
+#'@param input top level interactive user input in Shiny app
+#'@param output shiny list object for session output
+#'@param session active shiny session
+
+
 
 compileInput<-function(input, output, session){
-
+  
   invalue<-list()
   for (n in names(input)){
     if (!n %in% c("selectAll","clearAll","dropdown")){
-    eval(parse(text = paste0("invalue$`",n,"`<-input$`",n,"`")))
-  }}
+      eval(parse(text = paste0("invalue$`",n,"`<-input$`",n,"`")))
+    }}
   
-
+  
   return(invalue)
 } 

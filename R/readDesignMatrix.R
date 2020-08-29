@@ -1,61 +1,34 @@
-#
-# readDesignMatrix.R
-#
-###########################################################
-# READ SOURCE-DELIVERY DESIGN MATRIX
-###########################################################
+#'@title readDesignMatrix
+#'@description Reads the land-to-water and source interaction matrix in the 
+#'            'design_matrix.csv' file.  \\cr \\cr
+#'Executed By: startModelRun.R \\cr
+#'Executes Routines: \\itemize\{\\item getVarList.R
+#'             \\item importCSVcontrol.R
+#'             \\item unPackList.R\} \\cr
+#'@param file.output.list list of control settings and relative paths used for input and 
+#'                        output of external files.  Created by `generateInputList.R`
+#'@param betavalues data.frame of model parameters from parameters.csv
+#'@param batch_mode yes/no character string indicating whether RSPARROW is being run in batch 
+#'       mode
+#'@return `dmatrixin` imported object from design_matrix.csv
 
-readDesignMatrix <- function(path_results,file_design,betavalues, csv_decimalSeparator, csv_columnSeparator,
-                             batch_mode,ErrorOccured){
-  if (ErrorOccured=="no"){
-    tryIt<-try({ 
 
-  filed <- paste(path_results,file_design,"_design_matrix.csv",sep="")
+
+readDesignMatrix <- function(file.output.list,betavalues,batch_mode){
+  
+  
+  unPackList(lists = list(file.output.list = file.output.list),
+             parentObj = list(NA)) 
+  
+  filed <- paste(path_results,run_id,"_design_matrix.csv",sep="")
   
   #columns for DELIVF
-  Ctype<-nrow(betavalues[which(betavalues$parmType=="DELIVF"),])
   NAMES<-betavalues[which(betavalues$parmType=="DELIVF"),]$sparrowNames
+  Ctype<-seq(1:length(NAMES))
   
-  numberFields<-max(count.fields(filed,sep=csv_columnSeparator))
-  numberFields<-numberFields-Ctype
-  if (numberFields>0){
-    Ctype<-c(betavalues[which(betavalues$parmType=="DELIVF"),]$sparrowNames,rep("NULL",numberFields))
-  }else if (numberFields<0){#not enough columns invalid file
-    message(paste("ERROR: INVALID DESIGN_MATRIX FILE CHECK NUMBER OF COLUMNS\n 
-                  DESIGN_MATRIX FILE SHOULD HAVE THE FOLLOWING COLUMNS:\n ",sep=""))
-    for (i in NAMES){
-      message(i)
-    }
-    
-    message("\n \nRUN EXECUTION TERMINATED")
-    
-    if (batch_mode=="yes"){
-      cat("ERROR: INVALID DESIGN_MATRIX FILE CHECK NUMBER OF COLUMNS\n 
-          DESIGN_MATRIX FILE SHOULD HAVE THE FOLLOWING COLUMNS:\n ",sep="")
-      for (i in NAMES){
-        cat(i)
-      }
-      
-      cat("\n \nRUN EXECUTION TERMINATED")
-    }
-    ErrorOccured<-"yes"
-    assign("ErrorOccured","yes",envir = .GlobalEnv)
-    assign("ErrorOccured","yes",envir = parent.frame())
-    exit <- function() {
-      .Internal(.invokeRestart(list(NULL, NULL), NULL))
-    }
-    exit() 
-  }
-  
-  
-  dmatrixin <- read.csv(filed,header=TRUE,row.names=1,dec = csv_decimalSeparator,sep=csv_columnSeparator)
-  dmatrixin<-dmatrixin[1:(length(Ctype)-numberFields)]
-  
-  #remove columns/rows with all missing
-  dmatrixin<-as.data.frame(matrix(dmatrixin[apply(dmatrixin,1, function(x) any(!is.na(x))),],ncol=ncol(dmatrixin),nrow=nrow(dmatrixin),dimnames = list(rownames(dmatrixin),colnames(dmatrixin))))
-  #dmatrixin<-dmatrixin[,apply(dmatrixin,2, function(x) any(!is.na(x)))]
-  
-  names(dmatrixin)<-NAMES
+  #read file
+  dmatrixin<-importCSVcontrol(filed,Ctype,NAMES,"paste0('\n \nRUN EXECUTION TERMINATED')",
+                              file.output.list,TRUE,batch_mode)
   
   #trim whitespaces
   rownames(dmatrixin)<-trimws(rownames(dmatrixin),which="both")
@@ -69,16 +42,8 @@ readDesignMatrix <- function(path_results,file_design,betavalues, csv_decimalSep
                                   ncol=ncol(dmatrixin),nrow=nrow(dmatrixin),dimnames = list(rownames(dmatrixin),colnames(dmatrixin))))
   dmatrixin<-as.data.frame(matrix(dmatrixin[,match(betavalues[which(betavalues$parmType=="DELIVF"),]$sparrowNames,names(dmatrixin))],
                                   ncol=ncol(dmatrixin),nrow=nrow(dmatrixin),dimnames = list(rownames(dmatrixin),colnames(dmatrixin))))
-
-      },TRUE)#end try
-    
-    if (class(tryIt)=="try-error"){#if an error occured
-      if(ErrorOccured=="no"){
-        errorOccurred("readDesignMatrix.R",batch_mode)
-      }
-    }else{#if no error
-return(dmatrixin)
-    }#end if error
-    
-  }#test if previous error
+  
+  
+  return(dmatrixin)
+  
 }#end function

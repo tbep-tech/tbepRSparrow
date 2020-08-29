@@ -1,78 +1,40 @@
-#
-# predictOutCSV.R
-#
-#####################################################################################################
-# Calculates predictions of load
+#'@title predictBootsOutCSV
+#'@description Outputs the bootstrap predictions to CSV files.  \\cr \\cr
+#'Executed By: controlFileTasksModel.R \\cr
+#'Executes Routines: \\itemize\{\\item getVarList.R
+#'             \\item unPackList.R\} \\cr
+#'@param file.output.list list of control settings and relative paths used for input and 
+#'                        output of external files.  Created by `generateInputList.R`
+#'@param estimate.list list output from `estimate.R`
+#'@param predictBoots.list contains parametric bootstrap predictions for load and yield. 
+#'                         For more details see documentation Section 5.3.2.3
+#'@param subdata data.frame input data (subdata)
+#'@param add_vars additional variables specified by the setting `add_vars` to be included in 
+#'       prediction, yield, and residuals csv and shape files
+#'@param data_names data.frame of variable metadata from data_Dictionary.csv file
 
- predictBootsOutCSV <- function(path_results,file_sum,estimate.list,predictBoots.list,subdata,add_vars,
-                                data_names,csv_decimalSeparator, csv_columnSeparator,batch_mode,ErrorOccured) {
+
+
+predictBootsOutCSV <- function(file.output.list,estimate.list,predictBoots.list,
+                               subdata,add_vars,data_names) {
   
-  # INPUT objects:
-  # path_results
-  # file_sum
-  # estimate.list
-  # DataMatrix.list
-  # SelParmValues
-  # reach_decay_specification
-  # reservoir_decay_specification
-  # subdata
-  # bootcorrection
-
-#
-# Output loads:
-#   pload_total                Total load (fully decayed)
-#   pload_(sources)            Source load (fully decayed)
-#   mpload_total               Monitoring-adjusted total load (fully decayed)
-#   mpload_(sources)           Monitoring-adjusted source load (fully decayed)
-#   pload_nd_total             Total load delivered to streams (no stream decay)
-#   pload_nd_(sources)         Source load delivered to streams (no stream decay)
-#   pload_inc                  Total incremental load delivered to streams
-#   pload_inc_(sources)        Source incremental load delivered to streams
-#   deliv_frac                 Fraction of total load delivered to terminal reach
-#   pload_inc_deliv            Total incremental load delivered to terminal reach
-#   pload_inc_(sources)_deliv  Source incremental load delivered to terminal reach
-#   share_total_(sources)      Source shares for total load (percent)
-#   share_inc_(sources)        Source share for incremental load (percent)
-
-# Output yields:
-#   Concentration              Concentration based on decayed total load and discharge
-#   yield_total                Total yield (fully decayed)
-#   yield_(sources)            Source yield (fully decayed)
-#   myield_total               Monitoring-adjusted total yield (fully decayed)
-#   myield_(sources)           Monitoring-adjusted source yield (fully decayed)
-#   yield_inc                  Total incremental yield delivered to streams
-#   yield_inc_(sources)        Source incremental yield delivered to streams
-#   yield_inc_deliv            Total incremental yield delivered to terminal reach
-#   yield_inc_(sources)_deliv  Source incremental yield delivered to terminal reach
-
-#################################################
-   if (ErrorOccured=="no"){
-     tryIt<-try({ 
-
-# create global variable from list names (JacobResults)
-# 'oEstimate' containing the estimated mean parameters for all non-constant and constant parameters
-# 'Parmnames' list of variable names 
-  for(i in 1:length(estimate.list$JacobResults)){
-    tempobj=estimate.list$JacobResults[[i]]
-    eval(parse(text=paste(names(estimate.list$JacobResults)[[i]],"= tempobj")))
-  }
-
+  #################################################
+  
+  
+  # create global variable from list names (JacobResults)
+  # 'oEstimate' containing the estimated mean parameters for all non-constant and constant parameters
+  # 'Parmnames' list of variable names 
   # create global variable from list names (predictBoots.list)
-  for(i in 1:length(predictBoots.list)){
-    tempobj=predictBoots.list[[i]]
-    eval(parse(text=paste(names(predictBoots.list)[[i]],"= tempobj")))
-  }
-
   # transfer required variables to global environment from SUBDATA
-  datalstCheck <- as.character(getVarList()$varList)
-  for (i in 1:length(datalstCheck)) {
-    dname <- paste("subdata$",datalstCheck[i],sep="") 
-    x1name <- paste(datalstCheck[i],sep="")
-    if((x1name %in% names(subdata)) == TRUE) {
-      assign(datalstCheck[i],eval(parse(text=dname)))
-    }
-  }
-
+  unPackList(lists = list(JacobResults = estimate.list$JacobResults,
+                          datalstCheck = as.character(getVarList()$varList),
+                          predictBoots.list = predictBoots.list,
+                          file.output.list = file.output.list),
+             parentObj = list(NA,
+                              subdata = subdata,
+                              NA,
+                              NA))
+  
   #test if waterid was renumbered, if so add it to add_vars
   origWaterid<-as.character(data_names[which(data_names$sparrowNames=="waterid"),]$data1UserNames)
   if (origWaterid!="waterid"){
@@ -117,7 +79,7 @@
       
     }#for a in add_vars
   }  
-
+  
   # Output load predictions
   outvars <- as.data.frame(bootmatrix)
   colnames(outvars) <- boparmlist  
@@ -141,10 +103,10 @@
   
   outvars2 <- outvars2[with(outvars2,order(outvars2$hydseq,outvars2$waterid)), ]
   
-  fileout <- paste(path_results,"/predict/",file_sum,"_predicts_load_boots.csv",sep="")
+  fileout <- paste(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predicts_load_boots.csv",sep="")
   fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
          dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
-
+  
   # Output yield predictions
   outvars <- as.data.frame(bootyldmatrix)
   colnames(outvars) <- byldoparmlist  
@@ -167,20 +129,10 @@
   }# if add_vars
   outvars2 <- outvars2[with(outvars2,order(outvars2$hydseq,outvars2$waterid)), ]
   
-  fileout <- paste(path_results,"/predict/",file_sum,"_predicts_yield_boots.csv",sep="")
+  fileout <- paste(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predicts_yield_boots.csv",sep="")
   fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
          dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
   
-     },TRUE)#end try
-     
-     if (class(tryIt)=="try-error"){#if an error occured
-       if(ErrorOccured=="no"){
-         errorOccurred("predictBootsOutCSV.R",batch_mode)
-       }
-     }else{#if no error
+  
+}#end function
 
-     }#end if error
-     
-   }#test if previous error
- }#end function
-    

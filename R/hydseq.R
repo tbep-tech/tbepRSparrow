@@ -1,33 +1,28 @@
 #'@title hydseq
-#'@description function to generate hydseq variable from fnode and tnode in data1
-#'calculates headflag and/or demtarea if called for in calculate_reach_attribute_list
-#'@param indata subset of data1 where fnode>0, tnode>0 and termflag!=3
-#'@param calculate_reach_attribute_list list of reach attributes to calculate
-#'@param batch_mode yes/no indicating whether or not batch processing is used
-#'@param ErrorOccured yes/no indicating if a previous error has occured `ErrorOccured<-"no"`
-#'@return dataset with calculated reach attributes
+#'@description Creates values for the REQUIRED system variables specified in the 
+#'            'calculate_reach_attribute_list' control setting, including  'hydseq', 'headflag',  and/or 'demtarea'.  \\cr \\cr
+#'Executed By: createVerifyReachAttr.R \\cr
+#'Executes Routines: \\itemize\{\\item accumulateIncrArea.R
+#'             \\item getVarList.R
+#'             \\item unPackList.R\} \\cr
+#'@param indata data.frame containing reach navigation variables and variables to be selected 
+#'       for incremental area accumulation
+#'@param calculate_reach_attribute_list list of attributes to calculate
+#'@return `out` input data file with RSPARROW calculated hydseq values
 
 
-hydseq<-function(indata,calculate_reach_attribute_list, batch_mode,ErrorOccured){
 
-  if (ErrorOccured=="no"){
-    tryIt<-try({ 
- 
-      message("Running calculation of HYDSEQ (hydrologic sequencing numbers)...")
-      
-      #get data
-      #data1<-get(as.character(bquote(indata)))
-      data1<-indata
-        
+hydseq<-function(indata,calculate_reach_attribute_list){
+  
+  
+  message("Running calculation of HYDSEQ (hydrologic sequencing numbers)...")
+  
+  #get data
+  data1<-indata
+  
   # transfer required variables to global environment from data1
-  datalstCheck <- as.character(getVarList()$varList)
-  for (i in 1:length(datalstCheck)) {
-    dname <- paste("data1$",datalstCheck[i],sep="") 
-    x1name <- paste(datalstCheck[i],sep="")
-    if((x1name %in% names(data1)) == TRUE) {
-      assign(datalstCheck[i],eval(parse(text=dname)))
-    }
-  }
+  unPackList(lists = list(datalstCheck = as.character(getVarList()$varList)),
+             parentObj = list(data1 = data1))
   
   #create sequence variable
   SEQ<-data.frame(seqvar = seq(1,nrow(data1),1))
@@ -50,7 +45,7 @@ hydseq<-function(indata,calculate_reach_attribute_list, batch_mode,ErrorOccured)
   names(dnstream_list_index)[2:3]<-c("start","end")
   dnstream_list<-data.frame(seqvar = fnode$seqvar)
   
- #obtain maximum fnode value, and unique fnode list
+  #obtain maximum fnode value, and unique fnode list
   maxfnode<-max(fnode$fnode)
   fnode<-data.frame(fnode = unique(fnode$fnode))
   
@@ -80,13 +75,13 @@ hydseq<-function(indata,calculate_reach_attribute_list, batch_mode,ErrorOccured)
     lineOrder<-rbind(lineOrder,sub)
   }
   
-
- lineOrder$seqvar<-upstream_list_index[match(lineOrder$start,upstream_list_index$Row),]$seqvar
- lineOrder<-lineOrder[order(lineOrder$fnode,lineOrder$seqvar),]
-
+  
+  lineOrder$seqvar<-upstream_list_index[match(lineOrder$start,upstream_list_index$Row),]$seqvar
+  lineOrder<-lineOrder[order(lineOrder$fnode,lineOrder$seqvar),]
+  
   #define upstream_list
   upstream_list<-data.frame(seqvar = unique(lineOrder$seqvar))
-
+  
   #save upstream_list_index
   upstream_list_index<-upstream_list_index4
   
@@ -99,7 +94,7 @@ hydseq<-function(indata,calculate_reach_attribute_list, batch_mode,ErrorOccured)
   #save as headwaterflag in data1
   ifhead<-na.omit(fnode[which(!tnode$tnode %in% fnode$fnode),])
   if (length(grep("headflag",calculate_reach_attribute_list)!=0)){
-  data1$headflag<-ifelse(data1$fnode %in% ifhead,1,0)
+    data1$headflag<-ifelse(data1$fnode %in% ifhead,1,0)
   }
   
   #Module creates a sequence of upstream indices based on the 
@@ -121,8 +116,8 @@ hydseq<-function(indata,calculate_reach_attribute_list, batch_mode,ErrorOccured)
   getdindx<-function(inrow,dnstream_list_index){
     list_start<-dnstream_list_index[inrow,]
     return(seq(list_start[,1],list_start[,2],1))
-    }
-    
+  }
+  
   #Module returns the sequential ids for all flowlines
   #immediately upstream of all ids in the stack group
   #that also meet the condition that every flowline
@@ -136,27 +131,27 @@ hydseq<-function(indata,calculate_reach_attribute_list, batch_mode,ErrorOccured)
       dlist_subset<-dnstream_list[getdindx(fnode[group[i]],dnstream_list_index)]
       #create upgroup vector, empty
       if (i==1){
-  upgroup<-vector("numeric")
-}
-
+        upgroup<-vector("numeric")
+      }
+      
       #If all reaches downstream of fnode have hydseg then get list of
       #reaches upstream of fnode to be added to upstream group
       if (length(na.omit(ulist_subset))!=0 & !any(is.na(hydseqvar[dlist_subset])) & is.na(ifproc[fnode[group[i]]])){
         #mark as processed
         ifproc[fnode[group[i]]] <- 1
-          #save in upgroup
-          upgroup<-c(upgroup,upstream_list[ulist_subset])
-        }#end if (!is.na(ulist_subset) & ...
-       }#for i     
-      if (exists("upgroup")){
-        #save ifproc changes to parent.frame
-       assign("ifproc",ifproc,envir = parent.frame())  
-          return(upgroup)
-        }else{
-          return(NA)
-        }#end exists upgroup
+        #save in upgroup
+        upgroup<-c(upgroup,upstream_list[ulist_subset])
+      }#end if (!is.na(ulist_subset) & ...
+    }#for i     
+    if (exists("upgroup")){
+      #save ifproc changes to parent.frame
+      assign("ifproc",ifproc,envir = parent.frame())  
+      return(upgroup)
+    }else{
+      return(NA)
+    }#end exists upgroup
   }#end upstream
-
+  
   #Load terminal flowlines - used to initial the stack 
   stack<-ifterm$seqvar
   
@@ -191,7 +186,7 @@ hydseq<-function(indata,calculate_reach_attribute_list, batch_mode,ErrorOccured)
   nreaches = length(fnode)
   #Initialize the hydrosequence variable
   hydseqvar<-rep(NA,nreaches)
-    
+  
   #Imbed the indexes in fnode matrices 
   upstream_list_index<-as.data.frame(matrix(nrow=maxfnode,ncol=2,NA))
   upstream_list_index[upstrm_fnode,]<- upstrm_list_index
@@ -215,50 +210,40 @@ hydseq<-function(indata,calculate_reach_attribute_list, batch_mode,ErrorOccured)
   #flowlines immediately upstream of the existing 
   #stack. The loop terminates when there are no more
   #upstream flowlines in the network.
-
-   while (length(stack)!=0){
-   #Determine the upper range of hydrosequence
-   #numbers to assign to the existing stack
+  
+  while (length(stack)!=0){
+    #Determine the upper range of hydrosequence
+    #numbers to assign to the existing stack
     h1 = h0 + length(stack)
-
+    
     #Assign hydrosequnce numbers to the flowlines
     #in the existing stack, as referenced by the 
     #flowline sequence id.
     hydseqvar[stack] = seq((h0 + 1),h1,1)
-
+    
     #Repopulate the stack
     stack<-upstream(stack,hydseqvar,ifproc,fnode,dnstream_list,upstream_list,upstream_list_index,dnstream_list_index)
-
+    
     #Increment the hydrosequence counter 
-      h0<-h1
-
+    h0<-h1
+    
   }#end while
   
   #Update the values of the hydrosequence variable
   #in the network data set 
   
- #downstream ordering
-    data1$hydseq <- hydseqvar*-1 
-
+  #downstream ordering
+  data1$hydseq <- hydseqvar*-1 
+  
   
   #calculate total drainage area
-    if (length(calculate_reach_attribute_list=="demtarea")!=0){
-    demtarea_new<-accumulateIncrArea(data1,c("demiarea"),c("demtarea"),batch_mode,ErrorOccured)
+  if (length(calculate_reach_attribute_list=="demtarea")!=0){
+    demtarea_new<-accumulateIncrArea(data1,c("demiarea"),c("demtarea"))
     demtarea_new<-demtarea_new[match(data1$waterid,demtarea_new$waterid),]
     data1$demtarea<-demtarea_new$demtarea
-    }
+  }
   
-    },TRUE)#end try
-    
-    if (class(tryIt)=="try-error"){#if an error occured
-      if(ErrorOccured=="no"){
-        errorOccurred("hydseq.R",batch_mode)
-      }
-    }else{#if no error
-      return(data1)
-    }#end if error
-    
-  }#test if previous error
+  return(data1)
   
   
 }#end function

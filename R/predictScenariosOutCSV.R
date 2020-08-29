@@ -1,89 +1,60 @@
-#
-# predictScenariosOutCSV.R
-#
-#####################################################################################################
-# Calculates predictions of load
+#'@title predictScenariosOutCSV
+#'@description Outputs the scenario load predictions to CSV files.  \\cr \\cr
+#'Executed By: predictScenarios.R \\cr
+#'Executes Routines: \\itemize\{\\item getVarList.R
+#'             \\item named.list.R
+#'             \\item unPackList.R\} \\cr
+#'@param input top level interactive user input in Shiny app
+#'@param Rshiny TRUE/FALSE indicating whether routine is being run from the Shiny app
+#'@param file.output.list list of control settings and relative paths used for input and 
+#'                        output of external files.  Created by `generateInputList.R`
+#'@param estimate.list list output from `estimate.R`
+#'@param predictScenarios.list an archive with key scenario control settings and the load and 
+#'                             yield prediction variables that are output from the execution of 
+#'                             a source-change scenario evaluation. For more details see 
+#'                             documentation Section 5.5.9
+#'@param subdata data.frame input data (subdata)
+#'@param add_vars additional variables specified by the setting `add_vars` to be included in 
+#'       prediction, yield, and residuals csv and shape files
+#'@param scenario_name User specified name of source reduction scenario from sparrow_control.  
+#'       Used to create directory for source reduction scenario results.
+#'@param scenarioFlag binary vector indicating whether a reach is included in the source 
+#'       reduction scenario
+#'@param data_names data.frame of variable metadata from data_Dictionary.csv file
+#'@param scenarioCoefficients user specified model coefficients for the scenario
 
- predictScenariosOutCSV <- function(#Rshiny 
-                                    input, Rshiny,
-                                   #regular
-                                    path_results,file_sum,estimate.list,predictScenarios.list,subdata,add_vars,
-                                    scenario_name,data_names,csv_decimalSeparator, csv_columnSeparator,
-                                    batch_mode,ErrorOccured) {
- #Rshiny input
-   #input$domain
-   #input$scenario_sources
-   #input$factors
-    
-  # INPUT objects:
-  # path_results
-  # file_sum
-  # estimate.list
-  # DataMatrix.list
-  # SelParmValues
-  # reach_decay_specification
-  # reservoir_decay_specification
-  # subdata
-  # bootcorrection
 
-#
-# Output loads:
-#   pload_total                Total load (fully decayed)
-#   pload_(sources)            Source load (fully decayed)
-#   mpload_total               Monitoring-adjusted total load (fully decayed)
-#   mpload_(sources)           Monitoring-adjusted source load (fully decayed)
-#   pload_nd_total             Total load delivered to streams (no stream decay)
-#   pload_nd_(sources)         Source load delivered to streams (no stream decay)
-#   pload_inc                  Total incremental load delivered to streams
-#   pload_inc_(sources)        Source incremental load delivered to streams
-#   deliv_frac                 Fraction of total load delivered to terminal reach
-#   pload_inc_deliv            Total incremental load delivered to terminal reach
-#   pload_inc_(sources)_deliv  Source incremental load delivered to terminal reach
-#   share_total_(sources)      Source shares for total load (percent)
-#   share_inc_(sources)        Source share for incremental load (percent)
 
-# Output yields:
-#   Concentration              Concentration based on decayed total load and discharge
-#   yield_total                Total yield (fully decayed)
-#   yield_(sources)            Source yield (fully decayed)
-#   myield_total               Monitoring-adjusted total yield (fully decayed)
-#   myield_(sources)           Monitoring-adjusted source yield (fully decayed)
-#   yield_inc                  Total incremental yield delivered to streams
-#   yield_inc_(sources)        Source incremental yield delivered to streams
-#   yield_inc_deliv            Total incremental yield delivered to terminal reach
-#   yield_inc_(sources)_deliv  Source incremental yield delivered to terminal reach
-
-#################################################
-   if (ErrorOccured=="no"){
-     tryIt<-try({ 
-
-       if (Rshiny==TRUE){
-         scenario_name<-input$scenarioName
-       }
-       
-# create global variable from list names (JacobResults)
-# 'oEstimate' containing the estimated mean parameters for all non-constant and constant parameters
-# 'Parmnames' list of variable names 
-  for(i in 1:length(estimate.list$JacobResults)){
-    tempobj=estimate.list$JacobResults[[i]]
-    eval(parse(text=paste(names(estimate.list$JacobResults)[[i]],"= tempobj")))
+predictScenariosOutCSV <- function(#Rshiny 
+  input, Rshiny,
+  #regular
+  file.output.list,estimate.list,predictScenarios.list,subdata,add_vars,
+  scenario_name,scenarioFlag,data_names,scenarioCoefficients) {
+  
+  #################################################
+  
+  
+  if (Rshiny==TRUE){
+    scenario_name<-input$scenarioName
   }
-
+  # define "space" for printing
+  ch <- character(1)
+  space <- data.frame(ch)
+  row.names(space) <- ch
+  colnames(space) <- c(" ")
+  # create global variable from list names (JacobResults)
+  # 'oEstimate' containing the estimated mean parameters for all non-constant and constant parameters
+  # 'Parmnames' list of variable names 
   # create global variable from list names
-  for(i in 1:length(predictScenarios.list)){
-    tempobj=predictScenarios.list[[i]]
-    eval(parse(text=paste(names(predictScenarios.list)[[i]],"= tempobj")))
-  }
-
   # transfer required variables to global environment from SUBDATA
-  datalstCheck <-  as.character(c(getVarList()$varList,"waterid_for_RSPARROW_mapping"))
-  for (i in 1:length(datalstCheck)) {
-    dname <- paste("subdata$",datalstCheck[i],sep="") 
-    x1name <- paste(datalstCheck[i],sep="")
-    if((x1name %in% names(subdata)) == TRUE) {
-      assign(datalstCheck[i],eval(parse(text=dname)))
-    }
-  }
+  unPackList(lists = list(JacobResults = estimate.list$JacobResults,
+                          datalstCheck =  as.character(c(getVarList()$varList,"waterid_for_RSPARROW_mapping")),
+                          predictScenarios.list = predictScenarios.list,
+                          file.output.list = file.output.list),
+             parentObj = list(NA,
+                              subdata = subdata,
+                              NA,
+                              NA))
   
   #test if waterid was renumbered, if so add it to add_vars
   origWaterid<-as.character(data_names[which(data_names$sparrowNames=="waterid"),]$data1UserNames)
@@ -120,7 +91,6 @@
           addSubdataVars<-data.frame(waterid = subdata[,which(names(subdata) %in% tempCol)])
           addSubdataVars<-data.frame(waterid = subdata[,which(names(subdata) %in% tempCol)],
                                      temp = subdata[,which(names(subdata) %in% tempCol)])
-         # addSubdataVars<-cbind(addSubdataVars,data.frame(temp = subdata[,which(names(subdata) %in% tempCol)]))
           names(addSubdataVars)[2]<-tempName
         }else{
           addSubdataVarstemp<-data.frame(temp = subdata[,which(names(subdata) %in% tempCol)])
@@ -133,141 +103,184 @@
     names(addSubdataVars)[1]<-"waterid"
   }
   addSubdataVars<-subset(addSubdataVars, select=which(!duplicated(names(addSubdataVars)))) 
-# Output load predictions with changes from load-reduction scenarios
-    # prep for output to CSV
-    outvars <- as.data.frame(predmatrix)
-    colnames(outvars) <- oparmlist  
+  # Output load predictions with changes from load-reduction scenarios
+  # prep for output to CSV
+  outvars <- predmatrix
+  
+  
+  
+  rchname <- subdata$rchname
+  rchname <- gsub(",", "", rchname)
+  predatts <- data.frame(waterid,rchname,rchtype,headflag,termflag,demtarea,
+                         demiarea,meanq,fnode,tnode,hydseq,frac,iftran,staid,scenarioFlag)
+  
+  outvars2 <- merge(predatts,outvars,by="waterid",all.y=TRUE,all.x=TRUE)
+  if (length(na.omit(add_vars))!=0){
+    outvars2 <-merge(outvars2,addSubdataVars,by="waterid",all.x=TRUE,all.y=TRUE)
     
-    rchname <- subdata$rchname
-    rchname <- gsub(",", "", rchname)
-    predatts <- data.frame(waterid,rchname,rchtype,headflag,termflag,demtarea,
-                           demiarea,meanq,fnode,tnode,hydseq,frac,iftran,staid)
-    outvars2 <- merge(predatts,outvars,by="waterid",all.y=TRUE,all.x=TRUE)
-    if (length(na.omit(add_vars))!=0){
-      outvars2 <-merge(outvars2,addSubdataVars,by="waterid",all.x=TRUE,all.y=TRUE)
-      
-      #test if origWaterid column is in addsubdataVars, if so reorder columns so that origWaterid is in column 2
-      origWaterid<-names(addSubdataVars)[which(names(addSubdataVars) %in% c("originalWaterid",as.character(data_names[which(data_names$sparrowNames=="waterid"),]$data1UserNames)) 
-                                               & names(addSubdataVars)!="waterid")]
-      if (length(origWaterid)!=0){
-        outvars2<-outvars2[,match(c("waterid",origWaterid,names(outvars2)[which(!names(outvars2) %in% c("waterid",origWaterid))]),names(outvars2))]
-      }
-        
-    }# if add_vars
-    outvars2 <- outvars2[with(outvars2,order(outvars2$waterid)), ]  # sort by waterid
-    
-    fileout <- paste(path_results,"/scenarios/",scenario_name,"/",scenario_name,"_",file_sum,"_predicts_load_scenario.csv",sep="")
-    fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,col.names=TRUE,
-           dec = csv_decimalSeparator,sep=csv_columnSeparator,na = "NA")
-
-# Output load prediction changes (percent) from load-reduction scenarios
-    outvars <- as.data.frame(predmatrix_chg)
-    colnames(outvars) <- oparmlist  
-    
-    rchname <- subdata$rchname
-    rchname <- gsub(",", "", rchname)
-    predatts <- data.frame(waterid,rchname,rchtype,headflag,termflag,demtarea,
-                           demiarea,meanq,fnode,tnode,hydseq,frac,iftran,staid)
-    outvars2 <- merge(predatts,outvars,by="waterid",all.y=TRUE,all.x=TRUE)
-    if (length(na.omit(add_vars))!=0){
-      outvars2 <-merge(outvars2,addSubdataVars,by="waterid",all.x=TRUE,all.y=TRUE)
-      
-      #test if origWaterid column is in addsubdataVars, if so reorder columns so that origWaterid is in column 2
-      origWaterid<-names(addSubdataVars)[which(names(addSubdataVars) %in% c("originalWaterid",as.character(data_names[which(data_names$sparrowNames=="waterid"),]$data1UserNames)) 
-                                               & names(addSubdataVars)!="waterid")]
-      if (length(origWaterid)!=0){
-        outvars2<-outvars2[,match(c("waterid",origWaterid,names(outvars2)[which(!names(outvars2) %in% c("waterid",origWaterid))]),names(outvars2))]
-      }
-    }#if add_vars
-    outvars2 <- outvars2[with(outvars2,order(outvars2$waterid)), ]  # sort by waterid
-    
-    fileout <- paste(path_results,"/scenarios/",scenario_name,"/",scenario_name,"_",file_sum,"_predicts_loadchg_scenario.csv",sep="")
-    fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,col.names=TRUE,
-           dec = csv_decimalSeparator,sep=csv_columnSeparator,na = "NA")
-
-    
-# Output yield predictions with changes from load-reduction scenarios
-    # prep for output to CSV
-    outvars <- as.data.frame(yldmatrix)
-    colnames(outvars) <- oyieldlist  
-    
-    rchname <- subdata$rchname
-    rchname <- gsub(",", "", rchname)
-    predatts <- data.frame(waterid,rchname,rchtype,headflag,termflag,demtarea,
-                           demiarea,meanq,fnode,tnode,hydseq,frac,iftran,staid)
-    outvars2 <- merge(predatts,outvars,by="waterid",all.y=TRUE,all.x=TRUE)
-    if (length(na.omit(add_vars))!=0){
-      outvars2 <-merge(outvars2,addSubdataVars,by="waterid",all.x=TRUE,all.y=TRUE)
-      
-      #test if origWaterid column is in addsubdataVars, if so reorder columns so that origWaterid is in column 2
-      origWaterid<-names(addSubdataVars)[which(names(addSubdataVars) %in% c("originalWaterid",as.character(data_names[which(data_names$sparrowNames=="waterid"),]$data1UserNames)) 
-                                               & names(addSubdataVars)!="waterid")]
-      if (length(origWaterid)!=0){
-        outvars2<-outvars2[,match(c("waterid",origWaterid,names(outvars2)[which(!names(outvars2) %in% c("waterid",origWaterid))]),names(outvars2))]
-      }
-    }#if add_vars
-    outvars2 <- outvars2[with(outvars2,order(outvars2$waterid)), ]    # sort by waterid
-    
-    fileout <- paste(path_results,"/scenarios/",scenario_name,"/",scenario_name,"_",file_sum,"_predicts_yield_scenario.csv",sep="")
-    fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
-           dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
-    
-# Output yield prediction changes (percent) from load-reduction scenarios
-    outvars <- as.data.frame(yldmatrix_chg)
-    colnames(outvars) <- oyieldlist  
-    
-    rchname <- subdata$rchname
-    rchname <- gsub(",", "", rchname)
-    predatts <- data.frame(waterid,rchname,rchtype,headflag,termflag,demtarea,
-                           demiarea,meanq,fnode,tnode,hydseq,frac,iftran,staid)
-    outvars2 <- merge(predatts,outvars,by="waterid",all.y=TRUE,all.x=TRUE)
-    if (length(na.omit(add_vars))!=0){
-      outvars2 <-merge(outvars2,addSubdataVars,by="waterid",all.x=TRUE,all.y=TRUE)
-      
-      #test if origWaterid column is in addsubdataVars, if so reorder columns so that origWaterid is in column 2
-      origWaterid<-names(addSubdataVars)[which(names(addSubdataVars) %in% c("originalWaterid",as.character(data_names[which(data_names$sparrowNames=="waterid"),]$data1UserNames)) 
-                                               & names(addSubdataVars)!="waterid")]
-      if (length(origWaterid)!=0){
-        outvars2<-outvars2[,match(c("waterid",origWaterid,names(outvars2)[which(!names(outvars2) %in% c("waterid",origWaterid))]),names(outvars2))]
-      }
-    }#if add_vars
-    outvars2 <- outvars2[with(outvars2,order(outvars2$waterid)), ]    # sort by waterid
-    
-    fileout <- paste(path_results,"/scenarios/",scenario_name,"/",scenario_name,"_",file_sum,"_predicts_yieldchg_scenario.csv",sep="")
-    fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
-           dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
-    
-# Output meta data to text file documenting settings for scenario
-    if (Rshiny==FALSE){
-    outvars2 <- data.frame(if_predict_scenarios,scenario_sources,scenario_all_factors)
-    }else{
-      outvars2 <- data.frame(if_predict_scenarios=as.character(input$domain),
-                             scenario_sources=paste(as.character(input$scenario_sources),collapse=","),
-                             scenario_all_factors=paste(as.character(input$scenario_all_factors),collapse=","))
+    #test if origWaterid column is in addsubdataVars, if so reorder columns so that origWaterid is in column 2
+    origWaterid<-names(addSubdataVars)[which(names(addSubdataVars) %in% c("originalWaterid",as.character(data_names[which(data_names$sparrowNames=="waterid"),]$data1UserNames)) 
+                                             & names(addSubdataVars)!="waterid")]
+    if (length(origWaterid)!=0){
+      outvars2<-outvars2[,match(c("waterid",origWaterid,names(outvars2)[which(!names(outvars2) %in% c("waterid",origWaterid))]),names(outvars2))]
     }
-    colnames(outvars2) <- c("if_predict_scenarios","scenario_sources","scenario_all_factors")
     
-    fileout <- paste(path_results,"/scenarios/",scenario_name,"/",scenario_name,"_",file_sum,"_scenario_metainfo.txt",sep="")
-    fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
-           dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
+  }# if add_vars
+  outvars2 <- outvars2[with(outvars2,order(outvars2$waterid)), ]  # sort by waterid
+  
+  fileout <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_predicts_load_scenario.csv",sep="")
+  fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,col.names=TRUE,
+         dec = csv_decimalSeparator,sep=csv_columnSeparator,na = "NA")
+  
+  # Output the prediction variable names and units to CSV file
+  lunitsOut <- data.frame(oparmlist,loadunits)
+  colnames(lunitsOut) <- c("Prediction Metric Name","Units")
+  fileout <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_predicts_load_scenario_units.csv",sep="")
+  fwrite(lunitsOut,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
+         dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
+  
+  
+  # Output load prediction changes (percent) from load-reduction scenarios
+  outvars <- predmatrix_chg
+  
+  rchname <- subdata$rchname
+  rchname <- gsub(",", "", rchname)
+  predatts <- data.frame(waterid,rchname,rchtype,headflag,termflag,demtarea,
+                         demiarea,meanq,fnode,tnode,hydseq,frac,iftran,staid,scenarioFlag)
+  outvars2 <- merge(predatts,outvars,by="waterid",all.y=TRUE,all.x=TRUE)
+  if (length(na.omit(add_vars))!=0){
+    outvars2 <-merge(outvars2,addSubdataVars,by="waterid",all.x=TRUE,all.y=TRUE)
     
-    if (Rshiny==FALSE){
+    #test if origWaterid column is in addsubdataVars, if so reorder columns so that origWaterid is in column 2
+    origWaterid<-names(addSubdataVars)[which(names(addSubdataVars) %in% c("originalWaterid",as.character(data_names[which(data_names$sparrowNames=="waterid"),]$data1UserNames)) 
+                                             & names(addSubdataVars)!="waterid")]
+    if (length(origWaterid)!=0){
+      outvars2<-outvars2[,match(c("waterid",origWaterid,names(outvars2)[which(!names(outvars2) %in% c("waterid",origWaterid))]),names(outvars2))]
+    }
+  }#if add_vars
+  outvars2 <- outvars2[with(outvars2,order(outvars2$waterid)), ]  # sort by waterid
+  
+  fileout <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_predicts_loadchg_scenario.csv",sep="")
+  fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,col.names=TRUE,
+         dec = csv_decimalSeparator,sep=csv_columnSeparator,na = "NA")
+  
+  
+  # Output yield predictions with changes from load-reduction scenarios
+  # prep for output to CSV
+  outvars <- yldmatrix
+  
+  
+  
+  rchname <- subdata$rchname
+  rchname <- gsub(",", "", rchname)
+  predatts <- data.frame(waterid,rchname,rchtype,headflag,termflag,demtarea,
+                         demiarea,meanq,fnode,tnode,hydseq,frac,iftran,staid,scenarioFlag)
+  outvars2 <- merge(predatts,outvars,by="waterid",all.y=TRUE,all.x=TRUE)
+  if (length(na.omit(add_vars))!=0){
+    outvars2 <-merge(outvars2,addSubdataVars,by="waterid",all.x=TRUE,all.y=TRUE)
+    
+    #test if origWaterid column is in addsubdataVars, if so reorder columns so that origWaterid is in column 2
+    origWaterid<-names(addSubdataVars)[which(names(addSubdataVars) %in% c("originalWaterid",as.character(data_names[which(data_names$sparrowNames=="waterid"),]$data1UserNames)) 
+                                             & names(addSubdataVars)!="waterid")]
+    if (length(origWaterid)!=0){
+      outvars2<-outvars2[,match(c("waterid",origWaterid,names(outvars2)[which(!names(outvars2) %in% c("waterid",origWaterid))]),names(outvars2))]
+    }
+  }#if add_vars
+  outvars2 <- outvars2[with(outvars2,order(outvars2$waterid)), ]    # sort by waterid
+  
+  fileout <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_predicts_yield_scenario.csv",sep="")
+  fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
+         dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
+  
+  # Output the prediction variable names and units to CSV file
+  yunitsOut <- data.frame(oyieldlist,yieldunits)
+  colnames(yunitsOut) <- c("Prediction Metric Name","Units")
+  fileout <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_predicts_yield_scenario_units.csv",sep="")
+  fwrite(yunitsOut,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
+         dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
+  
+  # Output yield prediction changes (percent) from load-reduction scenarios
+  outvars <- yldmatrix_chg
+  
+  
+  
+  rchname <- subdata$rchname
+  rchname <- gsub(",", "", rchname)
+  predatts <- data.frame(waterid,rchname,rchtype,headflag,termflag,demtarea,
+                         demiarea,meanq,fnode,tnode,hydseq,frac,iftran,staid,scenarioFlag)
+  outvars2 <- merge(predatts,outvars,by="waterid",all.y=TRUE,all.x=TRUE)
+  if (length(na.omit(add_vars))!=0){
+    outvars2 <-merge(outvars2,addSubdataVars,by="waterid",all.x=TRUE,all.y=TRUE)
+    
+    #test if origWaterid column is in addsubdataVars, if so reorder columns so that origWaterid is in column 2
+    origWaterid<-names(addSubdataVars)[which(names(addSubdataVars) %in% c("originalWaterid",as.character(data_names[which(data_names$sparrowNames=="waterid"),]$data1UserNames)) 
+                                             & names(addSubdataVars)!="waterid")]
+    if (length(origWaterid)!=0){
+      outvars2<-outvars2[,match(c("waterid",origWaterid,names(outvars2)[which(!names(outvars2) %in% c("waterid",origWaterid))]),names(outvars2))]
+    }
+  }#if add_vars
+  outvars2 <- outvars2[with(outvars2,order(outvars2$waterid)), ]    # sort by waterid
+  
+  fileout <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_predicts_yieldchg_scenario.csv",sep="")
+  fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
+         dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
+  
+  # Output meta data to text file documenting settings for scenario 
+  fileout <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_scenario_metainfo.txt",sep="")
+  sink(file=fileout,split="FALSE",append=FALSE)
+  if (Rshiny==FALSE){
+    
+    
+    outvars2<-named.list(select_scenarioReachAreas,select_targetReachWatersheds,
+                         scenario_sources,scenario_factors,landuseConversion)
+    print(outvars2)
+    
+    
+  }else{#Rshiny
+    
+    outvars2 <- data.frame(select_scenarioReachAreas=as.character(input$domain),
+                           select_targetReachWatersheds = as.character(input$target))
+    if (input$domain=="all reaches"){
+      
+      print(outvars2)
+      print(space)
+      print(input$`nsSourceRedALL-hot`)
+      
+    }else{
+      if (input$allSrc=="yes"){
+        
+        print(outvars2)
+        print(space)
+        print(input$`nsSourceRed-hot`)
+        print(space)
+        print(input$`nsAllSources-hot`)
+        
+      }else{
+        
+        print(outvars2)
+        print(space)
+        print(input$`nsAllSourcesNO-hot`)
+        
+      }
+    }
+    
+    
+  }#end Rshiny sink
+  print(space)
+  print(scenarioCoefficients)
+  sink(type = "message")
+  sink()
+  
+  
+  if (Rshiny==FALSE){
     #save the modifySubdata routine with a record of the source change settings
     filesList<-c("_modifySubdata.R")
-    sapply(filesList, function(x) file.copy(paste(path_results,file_sum,x,sep=""),
-                                            paste(path_results,"/scenarios/",scenario_name,"/",scenario_name,"_",file_sum,x,sep="")))
-    }
-    
-     },TRUE)#end try
-     
-     if (class(tryIt)=="try-error"){#if an error occured
-       if(ErrorOccured=="no"){
-         errorOccurred("predictScenariosOutCSV.R",batch_mode)
-       }
-     }else{#if no error
+    sapply(filesList, function(x) file.copy(paste(path_results,run_id,x,sep=""),
+                                            paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,x,sep="")))
+  }
+  
+  
+  
+  
+}#end function
 
-     }#end if error
-     
-   }#test if previous error
- }#end function
-    

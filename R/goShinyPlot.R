@@ -1,234 +1,457 @@
-goShinyPlot<-function(input, output, session, choices, button,
-                            path_results,file_sum,path_gis,map_uncertainties,BootUncertainties,
-                            data_names,mapping.input.list,
-                            #predict.list,
-                            subdata,SelParmValues,
-                            #site attr
-                            sitedata,#estimate.list,Mdiagnostics.list,
-                            #scenarios
-                            scenario_name,JacobResults,
-                            ConcFactor,DataMatrix.list,
-                            reach_decay_specification,reservoir_decay_specification,
-                            #scenarios out
-                            add_vars,csv_decimalSeparator,csv_columnSeparator,
-                            #batchError
-                            batch_mode,ErrorOccured){
- 
- # p<-eventReactive(button, {
+#'@title goShinyPlot
+#'@description function to execute plots in shiny \\cr \\cr
+#'Executed By: shinyMap2.R \\cr
+#'Executes Routines: \\itemize\{\\item interactiveBatchRun.R
+#'             \\item compileALL.R
+#'             \\item convertHotTables.R
+#'             \\item mapSiteAttributes.R
+#'             \\item predictMaps.R
+#'             \\item predictScenarios.R
+#'             \\item shinyErrorTrap.R
+#'             \\item sourceRedFunc.R
+#'             \\item unPackList.R\} \\cr
+#'@param input top level interactive user input in Shiny app
+#'@param output shiny list object for session output
+#'@param session active shiny session
+#'@param choices data.frame output of function createInteractiveChoices.R
+#'@param button character string indicating which button was clicked by the user in the shiny 
+#'       app
+#'@param badSettings data.frame of row and column number is rhandsontables with invalid 
+#'       entries in the shiny app
+#'@param errMsg character string custom message indicating invalid entries in the shiny app
+#'@param file.output.list list of control settings and relative paths used for input and 
+#'                        output of external files.  Created by `generateInputList.R`
+#'@param map_uncertainties Vector of user selected uncertainty parameters to map, if 
+#'       uncertainty analysis was not run NA
+#'@param BootUncertainties Uncertainty values if available, if uncertainty analysis was not 
+#'       run NA
+#'@param data_names data.frame of variable metadata from data_Dictionary.csv file
+#'@param mapping.input.list Named list of sparrow_control settings for mapping: lat_limit, 
+#'                          lon_limit, master_map_list, lineShapeName, lineWaterid, 
+#'                          polyShapeName, ployWaterid, LineShapeGeo, LineShapeGeo, CRStext, 
+#'                          convertShapeToBinary.list, map_siteAttributes.list, 
+#'                          residual_map_breakpoints, site_mapPointScale, 
+#'                          if_verify_demtarea_maps
+#'@param subdata data.frame input data (subdata)
+#'@param SelParmValues selected parameters from parameters.csv using condition 
+#'       `ifelse((parmMax > 0 | (parmType=="DELIVF" & parmMax>=0)) & (parmMin<parmMax) & ((parmType=="SOURCE" & 
+#'       parmMin>=0) | parmType!="SOURCE")`
+#'@param sitedata Sites selected for calibration using `subdata[(subdata$depvar > 0
+#'                & subdata$calsites==1), ]`
+#'@param estimate.list list output from `estimate.R`
+#'@param JacobResults list output of Jacobian first-order partial derivatives of the model 
+#'       residuals `estimateNLLSmetrics.R` contained in the estimate.list object.  For more details see 
+#'       documentation Section 5.2.4.5.
+#'@param ConcFactor the concentration conversion factor, computed as Concentration = load / 
+#'       discharge * ConcFactor
+#'@param DataMatrix.list named list of 'data' and 'beta' matrices and 'data.index.list' 
+#'                       for optimization
+#'@param dlvdsgn design matrix imported from design_matrix.csv
+#'@param reach_decay_specification the SAS IML reach decay function code from sparrow_control
+#'@param reservoir_decay_specification the SAS IML reservoir decay function code from 
+#'       sparrow_control
+#'@param scenario.input.list list of control settings related to source change scenarios
+#'@param add_vars additional variables specified by the setting `add_vars` to be included in 
+#'       prediction, yield, and residuals csv and shape files
+#'@param batch_mode yes/no character string indicating whether RSPARROW is being run in batch 
+#'       mode
+#'@param RSPARROW_errorOption yes/no control setting indicating where the RPSARROW_errorOption 
+#'                            should be applied
 
-    compileALL<-compileALL(input, output, session, path_results, choices)
-    compiledInput<-compileALL$compiledInput
-    compiledInput<-convertHotTables(compiledInput)
-   # badSetting<-checkInteractiveSettings(compiledInput,path_results)
-    
- #   if (badSetting==FALSE){
-      
-      if (button=="savePDF" | input$batch=="Batch"){
-        if (!dir.exists(paste(path_results,"/maps/Interactive/",sep=""))){
-          dir.create(paste(path_results,"/maps/Interactive/",sep=""))
-        }
-        if (input$mapType=="Stream"){
-          if (!dir.exists(paste(path_results,"/maps/Interactive/Stream/",sep=""))){
-            dir.create(paste(path_results,"/maps/Interactive/Stream/",sep=""))
-          }
-          filename<- paste(path_results,"/maps/Interactive/Stream/",file_sum,"_",compiledInput$var,".pdf",sep="")
-          batchFilename<-paste(path_results,"/maps/Interactive/Stream/batch_",format(Sys.time(),"%Y-%m-%d_%H.%M.%S"),".RData",sep="")
-          
-        }else if (input$mapType=="Catchment"){
-          if (!dir.exists(paste(path_results,"/maps/Interactive/Catchment/",sep=""))){
-            dir.create(paste(path_results,"/maps/Interactive/Catchment/",sep=""))
-          }
-          filename<- paste(path_results,"/maps/Interactive/Catchment/",file_sum,"_",compiledInput$var,".pdf",sep="")
-          batchFilename<-paste(path_results,"/maps/Interactive/Catchment/batch_",format(Sys.time(),"%Y-%m-%d_%H.%M.%S"),".RData",sep="")
-          
-        }else if (input$mapType=="Site Attributes"){
-          if (!dir.exists(paste(path_results,"/maps/Interactive/SiteAttributes/",sep=""))){
-            dir.create(paste(path_results,"/maps/Interactive/SiteAttributes/",sep=""))
-          }
-          filename<- paste(path_results,"/maps/Interactive/SiteAttributes/",file_sum,"_SiteAttributes_",compiledInput$var,".pdf",sep="")
-          batchFilename<-paste(path_results,"/maps/Interactive/SiteAttributes/batch_",format(Sys.time(),"%Y-%m-%d_%H.%M.%S"),".RData",sep="")
-          
-        }else{#add check for if scenario exists ask user if proceed
-          if (!dir.exists(paste(path_results,"/scenarios/",compiledInput$scenarioName,"/",sep=""))){
-            dir.create(paste(path_results,"/scenarios/",compiledInput$scenarioName,"/",sep=""))
-          }
-          filename<- paste(path_results,"/scenarios/",compiledInput$scenarioName,"/",
-                           compiledInput$scenarioName,"_",file_sum,"_",compiledInput$variable,".pdf",sep="")
-          batchFilename<-paste(path_results,"/scenarios/",compiledInput$scenarioName,"/batch_",format(Sys.time(),"%Y-%m-%d_%H.%M.%S"),".RData",sep="")
-          
-        }
-        
-        if (input$batch!="Batch"){
-        pdf(filename)
-      }
-      }
-    
-   # Modal processing message
-  dataModal <- function() {
-    modalDialog(
-      title = "Please Wait Processing Map Request...",
-      
-      footer = tagList(
-        modalButton("OK")
-      )
-    )
-  }
+
+
+goShinyPlot<-function(input, output, session, choices, button, badSettings,errMsg,
+                      file.output.list, map_uncertainties,BootUncertainties,
+                      data_names,mapping.input.list,
+                      #predict.list,
+                      subdata,SelParmValues,
+                      #site attr
+                      sitedata,estimate.list,estimate.input.list,#Mdiagnostics.list,
+                      #scenarios
+                      JacobResults,
+                      ConcFactor,DataMatrix.list,dlvdsgn,
+                      reach_decay_specification,reservoir_decay_specification,
+                      scenario.input.list,if_predict,
+                      #scenarios out
+                      add_vars,
+                      #batchError
+                      batch_mode,
+                      RSPARROW_errorOption){
   
+  #unpack list objects making contents available by name 
+  unPackList(lists = list(file.output.list = file.output.list,
+                          scenario.input.list = scenario.input.list, 
+                          mapping.input.list = mapping.input.list),
+             parentObj = list(NA,NA, NA)) 
+  
+  #compile all user input and convert hottables to dataframes
+  compileALL<-compileALL(input, output, session, path_results, choices)
+  compiledInput<-compileALL$compiledInput
+  compiledInput<-convertHotTables(compiledInput)
+  compiledInput$button<-button
+  
+  #check for setting errors
+  errMsg<-shinyErrorTrap(compiledInput,path_results, badSettings,errMsg)
+  if (is.na(errMsg)){
+    
+    #load predicitons if available
+    if (file.exists(paste(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predict.list",sep=""))){
+      load(paste(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predict.list",sep=""))
+    }
+    
+    #estimation objects
+    if (file.exists(paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_JacobResults",sep=""))){
+      if (!exists("JacobResults")){
+        load(paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_JacobResults",sep=""))
+      }
+    }
+    
+    #setup output file paths for batch and pdf output
+    if (button=="savePDF" | input$batch=="Batch"){
+      if (!dir.exists(paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,sep=""))){
+        dir.create(paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,sep=""))
+      }
+      if (input$mapType=="Stream"){
+        if (!dir.exists(paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Stream",.Platform$file.sep,sep=""))){
+          dir.create(paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Stream",.Platform$file.sep,sep=""))
+        }
+        filename<- paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Stream",.Platform$file.sep,run_id,"_",compiledInput$var,".pdf",sep="")
+        batchFilename<-paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Stream",.Platform$file.sep,"batch_",format(Sys.time(),"%Y-%m-%d_%H.%M.%S"),".RData",sep="")
+        
+      }else if (input$mapType=="Catchment"){
+        if (!dir.exists(paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Catchment",.Platform$file.sep,sep=""))){
+          dir.create(paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Catchment",.Platform$file.sep,sep=""))
+        }
+        filename<- paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Catchment",.Platform$file.sep,run_id,"_",compiledInput$var,".pdf",sep="")
+        batchFilename<-paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Catchment",.Platform$file.sep,"batch_",format(Sys.time(),"%Y-%m-%d_%H.%M.%S"),".RData",sep="")
+        
+      }else if (input$mapType=="Site Attributes"){
+        if (!dir.exists(paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"SiteAttributes",.Platform$file.sep,sep=""))){
+          dir.create(paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"SiteAttributes",.Platform$file.sep,sep=""))
+        }
+        filename<- paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"SiteAttributes",.Platform$file.sep,run_id,"_SiteAttributes_",compiledInput$var,".pdf",sep="")
+        batchFilename<-paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"SiteAttributes",.Platform$file.sep,"batch_",format(Sys.time(),"%Y-%m-%d_%H.%M.%S"),".RData",sep="")
+        
+      }else{#add check for if scenario exists ask user if proceed
+        if (!dir.exists(paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,compiledInput$scenarioName,.Platform$file.sep,
+                              as.character(compiledInput$outType),.Platform$file.sep,sep=""))){
+          dir.create(paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,compiledInput$scenarioName,.Platform$file.sep,
+                           as.character(compiledInput$outType),.Platform$file.sep,sep=""))
+        }
+        filename<- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,compiledInput$scenarioName,.Platform$file.sep,
+                         as.character(compiledInput$outType),.Platform$file.sep,
+                         compiledInput$scenarioName,"_",run_id,"_",compiledInput$var,".pdf",sep="")
 
+        batchFilename<-paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,compiledInput$scenarioName,.Platform$file.sep,"batch_",format(Sys.time(),"%Y-%m-%d_%H.%M.%S"),".RData",sep="")
+        
+      }
+      
+      #if (input$batch!="Batch" & input$enablePlotly=="no"){
+      #  pdf(filename)
+      #}
+    }
+    
+    # Modal processing message
+    dataModal <- function() {
+      modalDialog(
+        title = "Please Wait Processing Map Request...",
+        
+        footer = tagList(
+          modalButton("OK")
+        )
+      )
+    }
+    
+    
     
     #set mapping input variable
     if (input$batch!="Batch"){
-    if (input$mapType=="Stream" | input$mapType=="Catchment"){
-      showModal(dataModal())
-     # print(compiledInput)
-     # compiledInput<-convertHotTables(compiledInput)
-      mapScenarios<-FALSE
+      
+      if (button!="savePDF"){
+        
+        
+        if (input$mapType=="Stream" | input$mapType=="Catchment"){
+          showModal(dataModal())
+          
+          mapScenarios<-FALSE
+          scenarioFlag<-NA
 
-      if(input$mapFormat == 'Static'){
-   
-        out <- predictMaps(compiledInput,NA,output_map_type,TRUE,
-                    path_results,file_sum,path_gis,
-                    data_names,mapping.input.list,
-                    subdata,
-                    #scenarios
-                    mapScenarios,
-                    scenario_map_list,
-                    predictScenarios.list,
-                    scenario_name,
-                    batch_mode,ErrorOccured)
-      
-        return(out)
-      }
-      
-      if(input$mapFormat == 'Dynamic'){
-        out <- predictMapsleaflet(compiledInput,NA,output_map_type,TRUE,
-                    path_results,file_sum,path_gis,
-                    data_names,mapping.input.list,
-                    subdata,
-                    #scenarios
-                    mapScenarios,
-                    scenario_map_list,
-                    predictScenarios.list,
-                    scenario_name,
-                    batch_mode,ErrorOccured)
-        return(out)
-      }
-      
-    }else if (input$mapType=="Site Attributes"){
-      showModal(dataModal())
+          #p<<-predictMaps(compiledInput,NA,output_map_type,TRUE,
+          p<-predictMaps(compiledInput,NA,output_map_type,TRUE,
+                          file.output.list,
+                          data_names,mapping.input.list,
+                          subdata,
+                          #scenarios
+                          mapScenarios,
+                          scenario_map_list,
+                          predictScenarios.list,
+                          scenarioFlag,
+                          batch_mode)
+          assign("p",p,envir = .GlobalEnv)
 
-      mapSiteAttributes(#Rshiny
-        compiledInput,NA, path_gis, sitedata, LineShapeGeo,data_names,TRUE,
-        #regular
-        mapColumn,mapdata,GeoLines,mapping.input.list,
-        strTitle,unitAttr,batch_mode,ErrorOccured)
-      
+          return(p)
 
-      
-    }else if (input$mapType=="Source Reduction Scenarios"){
-      showModal(dataModal())
-       #     compiledInput<-convertHotTables(compiledInput)
-      compiledInput<-sourceRedFunc(compiledInput)
-      
-      
-      unlink(list.files(paste(path_results,"/scenarios/",compiledInput$scenarioName,"/",sep=""),full.names = TRUE),recursive = TRUE)
-      predictScenarios(#Rshiny
-        compiledInput,NA, tolower(as.character(compiledInput$outType)),TRUE,
-        #regular
-        predict.list,if_predict_scenarios,scenario_sources,scenario_all_factors,
-        data_names,estimate.list,ConcFactor, if_predict,
-        #bootcorrection,
-        DataMatrix.list,SelParmValues,
-        reach_decay_specification,reservoir_decay_specification,subdata,
-        #predictStreamMapScenarios
-        path_results,file_sum,path_gis,
-        #scenarios out
-        add_vars,csv_decimalSeparator,csv_columnSeparator,
-        mapping.input.list,
-        batch_mode,ErrorOccured)
-
-    }
- 
-  if (button=="savePDF"){
-    dev.off()
-    
-    showModal(modalDialog(
-      title = "",
-      "Plot save action complete",
-      footer = tagList(
-        modalButton("OK")
-      )
-    ))
-  }
- 
-        }else{#end interactive start batch
+        }else if (input$mapType=="Site Attributes"){
+          showModal(dataModal())
+          
+          p<-mapSiteAttributes(#Rshiny
+            compiledInput,NA, path_gis, sitedata, LineShapeGeo,data_names,TRUE,
+            #regular
+            mapColumn,mapdata,GeoLines,mapping.input.list,
+            strTitle,unitAttr,batch_mode)
+          assign("p",p,envir = .GlobalEnv)
+          return(p) 
+          
+        }else if (input$mapType=="Source Change Scenarios"){
+          showModal(dataModal())
+          #     compiledInput<-convertHotTables(compiledInput)
+          #get source reduction functions
+          compiledInput<-sourceRedFunc(compiledInput)
+          
+          #delete previously generated scenario output with same scenario name
+          unlink(list.files(paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,compiledInput$scenarioName,.Platform$file.sep,sep=""),full.names = TRUE),recursive = TRUE)
+          p<- predictScenarios(#Rshiny
+            compiledInput,NA, tolower(as.character(compiledInput$outType)),TRUE,
+            #regular
+            estimate.input.list,estimate.list,
+            predict.list,scenario.input.list,
+            data_names,JacobResults,if_predict,
+            #bootcorrection,
+            DataMatrix.list,SelParmValues,subdata,
+            #predictStreamMapScenarios
+            file.output.list,
+            #scenarios out
+            add_vars,
+            mapping.input.list,
+            batch_mode,
+            RSPARROW_errorOption)
+          assign("p",p,envir = .GlobalEnv)
+          return(p)
+          
+        }
+      }else{
+        showModal(modalDialog(
+          title = "",
+          "Please wait for plot save action to complete",
+          footer = tagList(
+            modalButton("OK")
+          )
+        ))
+        if (class(p)[1]=="gg" & input$enablePlotly=="static"){
+          pdf(filename)
+        }else if (class(p)[1]=="plotly" | class(p)[1]=="leaflet") {
+          filename<-gsub(".pdf",".html",filename)
+        }
+        
+        if ((class(p)[1]=="gg" & input$enablePlotly=="static") | 
+            (class(p)[1]=="plotly" & input$enablePlotly=="plotly") | 
+            (class(p)[1]=="leaflet" & input$enablePlotly=="leaflet")){
+          if (class(p)[1]=="gg" & input$enablePlotly=="static"){
+            #replayPlot(p)
+            print(p)
+          }else if (class(p)[1]=="plotly" | class(p)[1]=="leaflet") {
+            reportPath<-paste0(path_master,"shinySavePlot.Rmd")
+            #edit title of report
+            reportTitle<-run_id
+            #read Rmd file as text
+            x <- readLines(reportPath)
+            #find where title is designated
+            editthis<-x[which(regexpr("title:",gsub(" ","",x))>0)]
+            #replace with current reportTitle
+            y <- gsub( editthis, paste0("title: '",reportTitle,"'"), x )
+            #overwrite the file
+            cat(y, file=reportPath, sep="\n") 
+            #ptm <- proc.time()
+            rmarkdown::render(
+              reportPath, params = list(
+                p = p
+              ),
+              output_file = filename, quiet = TRUE
+            )
+            #saveWidget(p,filename,selfcontained = FALSE)
+          }
+          
+          if (input$enablePlotly=="static"){
+            
+            dev.off()
+            
+            
+          }
+          suppressWarnings(remove(p))
           showModal(modalDialog(
             title = "",
-            "Running batch plot output.  DO NOT CLOSE Rhiny or Rstudio while batch plot output is running!",
+            "Plot save action complete",
             footer = tagList(
               modalButton("OK")
             )
           ))
-         
-          if (input$mapType=="Source Reduction Scenarios"){
-          compiledInput<-sourceRedFunc(compiledInput)
-         }
-          
-          inputShiny<-compiledInput
-          
-          if (exists("predict.list")){
-            saveList<-c(      #interactiveStream
-              "inputShiny","path_results","file_sum","path_gis","map_uncertainties","BootUncertainties",
-              "data_names","mapping.input.list","predict.list","subdata","SelParmValues","LineShapeGeo",
-              "lineShapeName","lineWaterid",
-              #iinteractiveSiteAttr
-              "sitedata", "LineShapeGeo",
-              "estimate.list","Mdiagnostics.list",
-              #interactiveScenarios
-              "if_predict_scenarios","scenario_sources","scenario_all_factors","if_predict","scenario_map_list",
-              "ConcFactor","DataMatrix.list",
-              "reach_decay_specification","reservoir_decay_specification","dlvdsgn",
+        }else{
+          if (input$mapType=="Stream" | input$mapType=="Catchment"){
+            showModal(dataModal())
+            mapScenarios<-FALSE
+            scenarioFlag<-NA
+            p<-predictMaps(compiledInput,NA,output_map_type,TRUE,
+                            file.output.list,
+                            data_names,mapping.input.list,
+                            subdata,
+                            #scenarios
+                            mapScenarios,
+                            scenario_map_list,
+                            predictScenarios.list,
+                            scenarioFlag,
+                            batch_mode)
+            
+            #return(p)
+            
+          }else if (input$mapType=="Site Attributes"){
+            showModal(dataModal())
+            p<-mapSiteAttributes(#Rshiny
+              compiledInput,NA, path_gis, sitedata, LineShapeGeo,data_names,TRUE,
+              #regular
+              mapColumn,mapdata,GeoLines,mapping.input.list,
+              strTitle,unitAttr,batch_mode)
+          }else if (input$mapType=="Source Change Scenarios"){
+            showModal(dataModal())
+            #     compiledInput<-convertHotTables(compiledInput)
+            #get source reduction functions
+            compiledInput<-sourceRedFunc(compiledInput)
+            
+            #delete previously generated scenario output with same scenario name
+            unlink(list.files(paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,compiledInput$scenarioName,.Platform$file.sep,sep=""),full.names = TRUE),recursive = TRUE)
+            p<- predictScenarios(#Rshiny
+              compiledInput,NA, tolower(as.character(compiledInput$outType)),TRUE,
+              #regular
+              estimate.input.list,estimate.list,
+              predict.list,scenario.input.list,
+              data_names,JacobResults,if_predict,
+              #bootcorrection,
+              DataMatrix.list,SelParmValues,subdata,
+              #predictStreamMapScenarios
+              file.output.list,
               #scenarios out
-              "add_vars","csv_decimalSeparator","csv_columnSeparator",
-              #all
-              "batch_mode","ErrorOccured")
-          }else{
-            saveList<-c(      #interactiveStream
-              "inputShiny","path_results","file_sum","path_gis","map_uncertainties","BootUncertainties",
-              "data_names","mapping.input.list","subdata","SelParmValues","LineShapeGeo",
-              "lineShapeName","lineWaterid",
-              #iinteractiveSiteAttr
-              "sitedata", "LineShapeGeo",
-              "estimate.list","Mdiagnostics.list",
-              #interactiveScenarios
-              "if_predict_scenarios","scenario_sources","scenario_all_factors","if_predict","scenario_map_list",
-              "ConcFactor","DataMatrix.list",
-              "reach_decay_specification","reservoir_decay_specification","dlvdsgn",
-              #scenarios out
-              "add_vars","csv_decimalSeparator","csv_columnSeparator",
-              #all
-              "batch_mode","ErrorOccured")
+              add_vars,
+              mapping.input.list,
+              batch_mode,
+              RSPARROW_errorOption)
+            # return(p)
+            
           }
-          save(list = saveList,
-               
-               file=batchFilename)
           
-          #save batchfileName to batch folder in master
-          save(list = c("path_main","batchFilename"),
-               file=paste(path_main,"/batch/interactiveBatch.RData",sep=""))
+          if (class(p)[1]=="gg" & input$enablePlotly=="static"){
+            pdf(filename)
+          }else if (class(p)[1]=="plotly" | class(p)[1]=="leaflet") {
+            filename<-gsub(".pdf",".html",filename)
+          }
+          if (class(p)[1]=="gg" & input$enablePlotly=="static"){
+            #replayPlot(p)
+           print(p)
+            #ggsave(p,height = 7, width = 7,filename = filename, units = "in")
+          }else if (class(p)[1]=="plotly" | class(p)[1]=="leaflet") {
+            reportPath<-paste0(path_master,"shinySavePlot.Rmd")
+            #edit title of report
+            reportTitle<-run_id
+            #read Rmd file as text
+            x <- readLines(reportPath)
+            #find where title is designated
+            editthis<-x[which(regexpr("title:",gsub(" ","",x))>0)]
+            #replace with current reportTitle
+            y <- gsub( editthis, paste0("title: '",reportTitle,"'"), x )
+            #overwrite the file
+            cat(y, file=reportPath, sep="\n") 
+            #ptm <- proc.time()
+            rmarkdown::render(
+              reportPath, params = list(
+                p = p
+              ),
+              output_file = filename, quiet = TRUE
+            )
+            #saveWidget(p,filename,selfcontained = FALSE)
+          }
           
-          system(paste(Sys.which("Rscript.exe")," ",file.path(paste(path_main,"/batch/interactiveBatchRun.R",sep="")),sep=""), wait = FALSE, invisible = FALSE)
-          
-          
-          
+          if (input$enablePlotly=="static"){
+            dev.off()
+            
+          }    
+          suppressWarnings(remove(p))
+          showModal(modalDialog(
+            title = "",
+            "Plot save action complete",
+            footer = tagList(
+              modalButton("OK")
+            )
+          ))
+          return(p)
+        }
+        #if (button=="savePDF" & input$enablePlotly=="no"){
+        # dev.off()
+        
+        
+        #}
+      } 
+      
+    }else{#end interactive start batch
+      showModal(modalDialog(
+        title = "",
+        "Running batch plot output.  DO NOT CLOSE Rhiny or Rstudio while batch plot output is running!",
+        footer = tagList(
+          modalButton("OK")
+        )
+      ))
+      
+      if (input$mapType=="Source Change Scenarios"){
+        compiledInput<-sourceRedFunc(compiledInput)
+      }
+      
+      inputShiny<-compiledInput
+      
+      #make list of everything needed in batch mode
+      if (exists("predict.list")){
+        saveList<-c(      #interactiveStream
+          "inputShiny","file.output.list","map_uncertainties","BootUncertainties",
+          "data_names","mapping.input.list","predict.list","subdata","SelParmValues","LineShapeGeo",
+          "lineShapeName","lineWaterid",
+          #iinteractiveSiteAttr
+          "sitedata", "LineShapeGeo",
+          "estimate.list",#"Mdiagnostics.list",
+          #interactiveScenarios
+          "scenario.input.list","if_predict","JacobResults",
+          "ConcFactor","DataMatrix.list","estimate.input.list",
+          "reach_decay_specification","reservoir_decay_specification","dlvdsgn",
+          #scenarios out
+          "add_vars",
+          #all
+          "batch_mode")
+      }else{
+        saveList<-c(      #interactiveStream
+          "inputShiny","file.output.list","map_uncertainties","BootUncertainties",
+          "data_names","mapping.input.list","subdata","SelParmValues","LineShapeGeo",
+          "lineShapeName","lineWaterid",
+          #iinteractiveSiteAttr
+          "sitedata", "LineShapeGeo",
+          "estimate.list",#"Mdiagnostics.list",
+          #interactiveScenarios
+          "scenario.input.list","if_predict","JacobResults",
+          "ConcFactor","DataMatrix.list","estimate.input.list",
+          "reach_decay_specification","reservoir_decay_specification","dlvdsgn",
+          #scenarios out
+          "add_vars",
+          #all
+          "batch_mode")
+      }
+      save(list = saveList,
+           
+           file=batchFilename)
+      
+      #save batchfileName to batch folder in master
+      save(list = c("path_main","batchFilename","RSPARROW_errorOption"),
+           file=paste(path_main,.Platform$file.sep,"batch",.Platform$file.sep,"interactiveBatch.RData",sep=""))
+      
+      system(paste(Sys.which("Rscript.exe")," ",file.path(paste(path_main,.Platform$file.sep,"batch",.Platform$file.sep,"interactiveBatchRun.R",sep="")),sep=""), wait = FALSE, invisible = FALSE)
+      
+      
+      
     }  #end batch
-  
-  #  }#check bad setting
     
- 
-    
- # })
-  
- # return(p())
+  }#if no errMsg
   
 }

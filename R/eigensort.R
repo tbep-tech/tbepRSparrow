@@ -1,14 +1,14 @@
-#
-# eigensort.R
-#
-##############################################################################
-# function to sort eigenvectors and eigenvalues in decreasing order
-#  Input: 'eigs' object containing eigenvalues and vectors from R 'eigen' function
-#  Output: 'eigout' object with eigenvalues and vectors sorted in decreasing order
-eigensort <- function(eigs,batch_mode,ErrorOccured) {
-  if (ErrorOccured=="no"){
-    tryIt<-try({ 
+#'@title eigensort
+#'@description Sorts eigenvectors and eigenvalues in decreasing order. \\cr \\cr
+#'Executed By: estimateNLLSmetrics.R \\cr
+#'@param eigs object containing eigenvalues and vectors from the base R `eigen()` function
+#'@return `eigenout`  list object with eigenvalues and vectors sorted in decreasing order
 
+
+
+eigensort <- function(eigs) {
+  
+  
   temp <- sort.int(eigs$values, index.return=TRUE, decreasing=TRUE)
   values <- temp$x
   n <- nrow(eigs$vectors)
@@ -17,16 +17,8 @@ eigensort <- function(eigs,batch_mode,ErrorOccured) {
     vectors[,i] <- eigs$vectors[,temp$ix[i]]
   }
   eigenout <- list("values"=values,"vectors"=vectors)
- 
-    },TRUE)#end try
-    
-    if (class(tryIt)=="try-error"){#if an error occured
-      if(ErrorOccured=="no"){
-        errorOccurred("eigensort.R",batch_mode)
-      }
-    }else{#if no error
-       return(eigenout)
-    }#end if error
-    
-  }#test if previous error
+  
+  
+  return(eigenout)
+  
 }#end function

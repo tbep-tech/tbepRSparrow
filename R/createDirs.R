@@ -1,34 +1,48 @@
 #'@title createDirs
-#'@description Function to creates model subdirectory name specified by run_id setting in sparrow_control.  Copies control files from results directory into model subdirectory.
-#'Uses subroutines: errorOccurred.
-#'@param oldName activeFile - path to current sparrow_control file
-#'@param newName run_id setting from sparrow_control file
-#'@param path_results path to results directory
-#'@param batch_mode yes/no character string indicating whether RSPARROW is being run in batch mode
-#'@param if_userModifyData yes/no character string indicating whether or not userModifyData.R is to be run.
-#'@param ErrorOccured yes/no indicating if a previous error has occured.  Function is only run if `ErrorOccured=="no"`
-#'@return TRUE/FALSE logical indicating whether or not function ran successfully
+#'@description creates all model subdirectories for file output \\cr \\cr
+#'Executed By: executeRSPARROW.R \\cr
+#'Executes Routines: \\itemize\{\\item errorOccurred.R
+#'             \\item syncVarNames.R
+#'             \\item unPackList.R\} \\cr
+#'@param file.output.list list of control settings and relative paths used for input and 
+#'                        output of external files.  Created by `generateInputList.R`
+#'@param if_userModifyData yes/no indicating whether or not the userModifyData.R control file 
+#'       is to be applied
+#'@param batch_mode yes/no character string indicating whether RSPARROW is being run in batch 
+#'       mode
+#'@return `complete`  TRUE/FALSE logical indicating whether or not function ran successfully
 
 
-createDirs<-function(oldName,newName,pathResults,batch_mode,if_userModifyData,ErrorOccured){
-  if (ErrorOccured=="no"){
-    tryIt<-try({
- 
+
+createDirs<-function(file.output.list,if_userModifyData,
+                     batch_mode){
+  
+  
+  unPackList(lists = list(file.output.list = file.output.list),
+             parentObj = list(NA)) 
+  
   options(warn=-1)
-  pathResults<-dirname(pathResults)
+  
+  run_id<-basename(path_results)
+  path_results<-dirname(path_results)
+  
   #create main directory
-  dir.create(paste(pathResults,"/",newName,sep=""))
+  dir.create(paste(path_results,.Platform$file.sep,run_id,sep=""))
   #createsubdirectories
   dirList<-c("data",
              "estimate",
              "maps",
              "predict",
              "scenarios")
-
- sapply(dirList, function(x) dir.create(paste(pathResults,"/",newName,"/",x,sep="")))
+  
+  sapply(dirList, function(x) dir.create(paste(path_results,.Platform$file.sep,run_id,.Platform$file.sep,x,sep="")))
   if (batch_mode=="yes"){
-    dir.create(paste(pathResults,"/",newName,"/","batchSessionInfo",sep=""))
+    dir.create(paste(path_results,.Platform$file.sep,run_id,.Platform$file.sep,"batchSessionInfo",sep=""))
   }
+  
+  #match varType in dataDictionary to parmTypes in parameters
+  syncVarNames(file.output.list,batch_mode)
+  
   #save control files
   filesList<-c("sparrow_control.R",
                "parameters.csv",
@@ -38,32 +52,23 @@ createDirs<-function(oldName,newName,pathResults,batch_mode,if_userModifyData,Er
   if (if_userModifyData=="no"){
     filesList<-filesList[which(filesList!="userModifyData.R")]
   }
-    fileCopy<-sapply(filesList, function(x) file.copy(paste(pathResults,"/",x,sep=""),
-                                            paste(pathResults,"/",newName,"/",newName,"_",x,sep=""),overwrite=TRUE))
-    fileCopy<-data.frame(success = t(fileCopy)[1,])
-    fileCopy$path<-paste(pathResults,"/",filesList,sep="")
-    fileCopy<-fileCopy[which(fileCopy$success==FALSE),]
-    
-    if (nrow(fileCopy)!=0){
-      for (x in fileCopy$path){
-        message(cat("MISSING CONTROL FILES.\n \n",x,"\n \nRUN EXECUTION TERMINATED",sep=""))
-      }
-      complete<-FALSE
-      assign("ErrorOccured","yes",envir = .GlobalEnv)
-      assign("ErrorOccured","yes",envir = parent.frame())
-    }else{
+  fileCopy<-sapply(filesList, function(x) file.copy(paste(path_results,.Platform$file.sep,x,sep=""),
+                                                    paste(path_results,.Platform$file.sep,run_id,.Platform$file.sep,run_id,"_",x,sep=""),overwrite=TRUE))
+  fileCopy<-data.frame(success = t(fileCopy)[1,])
+  fileCopy$path<-paste(path_results,.Platform$file.sep,filesList,sep="")
+  fileCopy<-fileCopy[which(fileCopy$success==FALSE),]
+  
+  if (nrow(fileCopy)!=0){
+    for (x in fileCopy$path){
+      message(cat("MISSING CONTROL FILES.\n \n",x,"\n \nRUN EXECUTION TERMINATED",sep=""))
+    }
+    complete<-FALSE
+    errorOccurred("createDirs.R",batch_mode)
+  }else{
     complete<-TRUE}
-
-    },TRUE)#end try
-    
-    if (class(tryIt)=="try-error"){#if an error occured
-      if(ErrorOccured=="no"){
-        errorOccurred("createDirs.R",batch_mode)
-      }
-    }else{#if no error
-      return(complete)
-      options(warn=0)
-    }#end if error
-    
-  }#test if previous error
+  
+  
+  return(complete)
+  options(warn=0)
+  
 }#end function

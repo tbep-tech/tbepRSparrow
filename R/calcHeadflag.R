@@ -1,25 +1,20 @@
 #'@title calcHeadflag
-#'@description calculates headflag (translated from SAS hydseq code)
-#'Uses subroutines: errorOccurred. 
-#'@param data1 dataset to use for headflag calculation
-#'@param batch_mode yes/no character string indicating whether RSPARROW is being run in batch mode
-#'@param ErrorOccured yes/no indicating if a previous error has occured.  Function is only run if `ErrorOccured=="no"`
-#'@return data.frame with waterid and headflag
+#'@description Calculates the system variable headflag (translated from SAS hydseq code) \\cr \\cr
+#'Executed By: createVerifyReachAttr.R \\cr
+#'Executes Routines: \\itemize\{\\item getVarList.R
+#'             \\item unPackList.R\} \\cr
+#'@param data1 input data (data1)
+#'@return `outdata`  data.frame with waterid and headflag
 
 
-calcHeadflag<-function(data1, batch_mode,ErrorOccured){
-  if (ErrorOccured=="no"){
-    tryIt<-try({
- 
+
+calcHeadflag<-function(data1){
+  
+  
   # transfer required variables to global environment from data1
-  datalstCheck <- as.character(getVarList()$varList)
-  for (i in 1:length(datalstCheck)) {
-    dname <- paste("data1$",datalstCheck[i],sep="") 
-    x1name <- paste(datalstCheck[i],sep="")
-    if((x1name %in% names(data1)) == TRUE) {
-      assign(datalstCheck[i],eval(parse(text=dname)))
-    }
-  }
+  unPackList(lists = list(datalstCheck = as.character(getVarList()$varList)),
+             parentObj = list(data1 = data1))
+  
   
   #create sequence variable
   SEQ<-data.frame(seqvar = seq(1,nrow(data1),1))
@@ -39,20 +34,11 @@ calcHeadflag<-function(data1, batch_mode,ErrorOccured){
   
   #save as headwaterflag in data1
   ifhead<-na.omit(fnode[which(!tnode$tnode %in% fnode$fnode),])
-    data1$headflag<-ifelse(data1$fnode %in% ifhead,1,0)
+  data1$headflag<-ifelse(data1$fnode %in% ifhead,1,0)
   
-    outdata<-data1[,which(names(data1) %in% c("waterid","headflag"))]
-    },TRUE)#end try
-    
-    if (class(tryIt)=="try-error"){#if an error occured
-      if(ErrorOccured=="no"){
-        errorOccurred("calcHeadflag.R",batch_mode)
-      }
-    }else{#if no error
-      return(outdata)
-    }#end if error
-    
-  }#test if previous error
+  outdata<-data1[,which(names(data1) %in% c("waterid","headflag"))]
+  return(outdata)
+  
   
   
 }#end function

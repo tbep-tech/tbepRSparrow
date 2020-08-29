@@ -1,43 +1,34 @@
 #'@title checkAnyMissingSubdataVars
-#'@description function to identify required variables and parameter variables with any missing or zero values and print a warning in the console
-#'Uses subroutines: getVarList, errorOccurred. 
-#'@param subdata input data (subdata) 
-#'@param betavalues list of parameters from parameters.csv
-#'@param batch_mode yes/no character string indicating whether RSPARROW is being run in batch mode
-#'@param ErrorOccured yes/no indicating if a previous error has occured.  Function is only run if `ErrorOccured=="no"`
+#'@description Identifies REQUIRED system variables and parameter variables with any missing 
+#'            or zero values and prints a warning in the console \\cr \\cr
+#'Executed By: startModelRun.R \\cr
+#'Executes Routines: \\itemize\{\\item checkingMissingVars.R
+#'             \\item errorOccurred.R
+#'             \\item getVarList.R
+#'             \\item unPackList.R\} \\cr
+#'@param subdata data.frame input data (subdata)
+#'@param betavalues data.frame of model parameters from parameters.csv
+#'@param batch_mode yes/no character string indicating whether RSPARROW is being run in batch 
+#'       mode
 
 
 
-checkAnyMissingSubdataVars <- function(subdata,betavalues,batch_mode,ErrorOccured) {
-  if (ErrorOccured=="no"){
-    tryIt<-try({ 
-#  input variables:
-#  subdata
-#  betavalues
-  datalstCheck <- as.character(getVarList()$varList)
-
-  datalstMissingSubdata <- rep(0,length(datalstCheck))
-  k<-0
-  for (i in 1:length(datalstCheck)) { 
-    dname <- paste("if(sum(is.na(subdata$",datalstCheck[i],"))>0)
-                   { k<-k+1; datalstMissingSubdata[k] <- datalstCheck[i] }",sep="")   
-    eval(parse(text=dname))  # tag as some values missing
-  }
+checkAnyMissingSubdataVars <- function(subdata,betavalues,batch_mode) {
   
-  # Check user-selected parameters in SUBDATA for any NAs
-  xlnames <- betavalues$sparrowNames[betavalues$parmMax != 0]
-  for (i in 1:length(xlnames)) { 
-    dname <- paste("if(sum(is.na(subdata$",xlnames[i],"))>0)
-                   { k<-k+1; datalstMissingSubdata[k] <- xlnames[i] }",sep="")   
-    eval(parse(text=dname))  # tag as some values missing
-  }
-
+  #get missing values
+  missing<-checkingMissingVars(subdata, data_names = NA, betavalues,  
+                               types = c("datalstCheck","xlnames") , allMissing = FALSE,
+                               returnData = FALSE)
+  unPackList(lists = list(missing = missing),
+             parentObj = list(NA))
+  
+  
   if(k>0) { 
-    reqMissingSubdataVariable<-datalstMissingSubdata[1:k]
+    reqMissingSubdataVariable<-datalstMissingdata[1:k]
     reqMissingSubdataVariable<-reqMissingSubdataVariable[which(reqMissingSubdataVariable %in% as.character(getVarList()$reqNames))]
     if (length(reqMissingSubdataVariable)!=0){
       for (i in reqMissingSubdataVariable){
-      message(paste(" \nWARNING: THIS REQUIRED VARIABLE HAS SELECTED MISSING VALUES IN SUBDATA:",i,"\n ",sep=""))
+        message(paste(" \nWARNING: THIS REQUIRED VARIABLE HAS SELECTED MISSING VALUES IN SUBDATA:",i,"\n ",sep=""))
         if (batch_mode=="yes"){
           cat(paste(" \nWARNING: THIS REQUIRED VARIABLE HAS SELECTED MISSING VALUES IN SUBDATA:",i,"\n ",sep=""))
           if (i==reqMissingSubdataVariable[length(reqMissingSubdataVariable)]){
@@ -48,11 +39,11 @@ checkAnyMissingSubdataVars <- function(subdata,betavalues,batch_mode,ErrorOccure
     }else
       reqMissingSubdataVariableMessage<-""
     
-    fixMissingSubdataVariable<-datalstMissingSubdata[1:k]
+    fixMissingSubdataVariable<-datalstMissingdata[1:k]
     fixMissingSubdataVariable<-fixMissingSubdataVariable[which(fixMissingSubdataVariable %in% as.character(getVarList()$fixNames))]
     if (length(fixMissingSubdataVariable)!=0){
       for (i in fixMissingSubdataVariable){
-      message(paste(" \nWARNING: THIS FIXED VARIABLE HAS SELECTED MISSING VALUES IN SUBDATA:",i,"\n ",sep=""))
+        message(paste(" \nWARNING: THIS FIXED VARIABLE HAS SELECTED MISSING VALUES IN SUBDATA:",i,"\n ",sep=""))
         if (batch_mode=="yes"){
           cat(paste(" \nWARNING: THIS FIXED VARIABLE HAS SELECTED MISSING VALUES IN SUBDATA:",i,"\n ",sep=""))
           if (i==fixMissingSubdataVariable[length(fixMissingSubdataVariable)]){
@@ -62,8 +53,8 @@ checkAnyMissingSubdataVars <- function(subdata,betavalues,batch_mode,ErrorOccure
       }
     }else
       fixMissingSubdataVariableMessage<-""
-  
-    paramMissingSubdataVariable<-datalstMissingSubdata[1:k]
+    
+    paramMissingSubdataVariable<-datalstMissingdata[1:k]
     paramMissingSubdataVariable<-paramMissingSubdataVariable[which(paramMissingSubdataVariable %in% as.character(xlnames))]
     if (length(paramMissingSubdataVariable)!=0){
       for (i in paramMissingSubdataVariable){
@@ -74,31 +65,16 @@ checkAnyMissingSubdataVars <- function(subdata,betavalues,batch_mode,ErrorOccure
             cat("\n \n")
           }
         }
-        assign("ErrorOccured","yes",envir = .GlobalEnv)
-        assign("ErrorOccured","yes",envir = parent.frame())
+        errorOccurred("checkAnyMissingSubdataVars.R",batch_mode)
       }
     }else
       paramMissingSubdataMessage<-""
     
   }
   
-  if (ErrorOccured=="yes"){
-    exit <- function() {
-      .Internal(.invokeRestart(list(NULL, NULL), NULL))
-    }
-    exit()  
-  }
-
-    },TRUE)#end try
-    
-    if (class(tryIt)=="try-error"){#if an error occured
-      if(ErrorOccured=="no"){
-        errorOccurred("checkAnyMissingSubdataVars.R",batch_mode)
-      }
-    }else{#if no error
-    }#end if error
-    
-  }#test if previous error
+  
+  
+  
 }#end function
 
 

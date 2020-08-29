@@ -1,31 +1,45 @@
 #'@title checkBinaryMaps
-#'@description Checks if binary mapping objects exist and loads binary files if exists
-#'Uses subroutines: errorOccurred. 
-#'@param mapSetting as.character setting in control file that user sets 
-#'@param settingValue setting in control file that user sets 
-#'@param outObj object loaded from binary file
+#'@description Checks if binary mapping objects exist and loads binary files \\cr \\cr
+#'Executed By: \\itemize\{\\item checkDrainageareaErrors.R
+#'             \\item diagnosticPlotsNLLS.R
+#'             \\item diagnosticPlotsValidate.R
+#'             \\item mapSiteAttributes.R
+#'             \\item predictMaps.R\} \\cr
+#'@param mapSetting setting in control file that user sets to use to load the binary map 
+#'       (`lineShapeName`, `polyShapeName`, or `LineShapeGeo`)
 #'@param path_gis path to users gis data
-#'@param batch_mode yes/no character string indicating whether RSPARROW is being run in batch mode
-#'@param ErrorOccured yes/no indicating if a previous error has occured.  Function is only run if `ErrorOccured=="no"`
-#'@return logical TRUE/FALSE indicating whether or not file is loaded
+#'@param batch_mode yes/no character string indicating whether RSPARROW is being run in batch 
+#'       mode
+#'@return `fileLoaded`  logical TRUE/FALSE indicating whether or not file is loaded
 
-checkBinaryMaps<-function(mapSetting, settingValue, outObj, path_gis,batch_mode,ErrorOccured){
- 
-  if (ErrorOccured=="no"){
-    tryIt<-try({
 
-   objfile <- paste(path_gis,"/",outObj,sep="")
+
+checkBinaryMaps<-function(mapSetting,path_gis,batch_mode){
   
-  Setting<-settingValue
   
-  if(!is.na(Setting) & file.exists(objfile)) { 
+  #get name of setting
+  settingName<-deparse(substitute(mapSetting))
+  
+  #set name of output object
+  if (settingName=="lineShapeName"){
+    outObj<-"lineShape"
+  }else if (settingName=="LineShapeGeo"){
+    outObj<-"GeoLines"
+  }else{
+    outObj<-"polyShape"
+  }
+  objfile <- paste(path_gis,.Platform$file.sep,outObj,sep="")   
+  
+  
+  
+  if(!is.na(mapSetting) & file.exists(objfile)) { 
     load(objfile)
     assign(outObj,get(outObj),env = parent.frame())
     
     if (!exists("outObj")){
-      message(paste(mapSetting," <- ",Setting," NOT FOUND MAPPING CANNOT COMPLETE.\nSet if_create_binary_maps<-'yes' to create binary files.",sep=""))
+      message(paste(settingName," <- ",mapSetting," NOT FOUND MAPPING CANNOT COMPLETE.\nSet if_create_binary_maps<-'yes' to create binary files.",sep=""))
       if (batch_mode=="yes"){#if batch output message to log
-        cat(mapSetting," <- ",Setting," NOT FOUND MAPPING CANNOT COMPLETE.\nSet if_create_binary_maps<-'yes' to create binary files.",sep="")
+        cat(settingName," <- ",mapSetting," NOT FOUND MAPPING CANNOT COMPLETE.\nSet if_create_binary_maps<-'yes' to create binary files.",sep="")
       }
       fileLoaded<-FALSE
     }else{
@@ -35,15 +49,7 @@ checkBinaryMaps<-function(mapSetting, settingValue, outObj, path_gis,batch_mode,
     fileLoaded<-FALSE
   }
   
-    },TRUE)#end try
-    
-    if (class(tryIt)=="try-error"){#if an error occured
-      if(ErrorOccured=="no"){
-        errorOccurred("checkBinaryMaps.R",batch_mode)
-      }
-    }else{#if no error
-      return(fileLoaded)
-    }#end if error
-    
-  }#test if previous error
+  
+  return(fileLoaded)
+  
 }#end function

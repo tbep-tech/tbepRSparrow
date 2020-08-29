@@ -1,0 +1,22 @@
+---
+title: 'interactive_2020.06.04'
+output: html_document
+params:
+  p: p
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,eval=TRUE, echo=FALSE,warning=FALSE, message = FALSE)
+```
+
+```{r, eval=TRUE, echo=FALSE,warning=FALSE, message = FALSE,fig.width=8, fig.height=8}
+#unpack params
+p<-params$p
+
+p
+
+
+
+
+
+

@@ -4,22 +4,19 @@
 \alias{addVars}
 \title{addVars}
 \usage{
-addVars(path_user, results_directoryName, csv_decimalSeparator,
-  csv_columnSeparator, ErrorOccured)
+addVars(file.output.list, batch_mode)
 }
 \arguments{
-\item{path_user}{this is path to users model directory containing results, data, and gis folders}
-
-\item{results_directoryName}{this is the users directory name for the results}
-
-\item{csv_decimalSeparator}{decimal separator for read/write csv files}
-
-\item{csv_columnSeparator}{column separator for read/write csv files}
-
-\item{ErrorOccured}{yes/no indicating if a previous error has occured \code{ErrorOccured<-"no"}}
+\item{batch_mode}{yes/no character string indicating whether RSPARROW is being run in batch
+mode}
 }
 \description{
-Tests for sparrowNames found in parameters.csv, but not in dataDictionary.csv or design_matrix.csv.
-edits dataDictionary.csv and/or design_matrix.csv adding missing sparrowName
-and opens design_matrix.csv and userModifyData.R for edit.
+Tests for sparrowNames found in parameters.csv, but not in dataDictionary.csv
+or design_matrix.csv. Edits dataDictionary.csv and/or design_matrix.csv adding missing
+sparrowNames and opens dataDictionary.csv, design_matrix.csv and userModifyData.R for edit. \cr \cr
+Executed By: executeRSPARROW.R \cr
+Executes Routines: \itemize{\item errorOccurred.R
+\item getVarList.R
+\item importCSVcontrol.R
+\item unPackList.R} \cr
 }
