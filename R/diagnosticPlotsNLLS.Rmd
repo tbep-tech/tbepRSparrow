@@ -1,5 +1,5 @@
 ---
-title: "diagnostic plots"
+title: 'UpperMissOhio_diagnostic_plots'
 author: ""
 date: "`r paste0('Generated: ',format(Sys.time(), '%m-%d-%Y'))`"
 output: html_document
