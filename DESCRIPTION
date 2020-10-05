@@ -9,7 +9,7 @@ Description: Setup and execution of the USGS SPARROW water-quality model for a u
 Roxygen: list(markdown=TRUE)
 VignetteBuilder: knitr
 Depends:
-    R(>= 4.0.2),
+    R(>= 3.6.3),
     methods
 Imports:
     car (>= 3.0-8),
