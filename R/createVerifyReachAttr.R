@@ -38,7 +38,7 @@ createVerifyReachAttr <- function(if_verify_demtarea,calculate_reach_attribute_l
   # Select reaches to be included in the analysis (exclude coastal shorelines)
   # NAs removed first or will create NA records in 'sub1'
   for (c in c("termflag","fnode","tnode","demiarea","demtarea")){
-    eval(parse(text = paste("data1$",c,"<-ifelse(is.na(data1$",c,"),0,data1$",c,")",sep="")))
+    eval(parse(text = paste0("data1$",c,"<-ifelse(is.na(data1$",c,"),0,data1$",c,")")))
   }
   
   sub1 <- data1[(data1$fnode > 0 & data1$tnode > 0 & data1$termflag != 3), ]
@@ -47,7 +47,7 @@ createVerifyReachAttr <- function(if_verify_demtarea,calculate_reach_attribute_l
     
     if (nrow(sub1)==0){
       cat("\n \n")
-      message(paste("HYDSEQ VARIABLE CANNOT BE CALCULATED\n DATASET WITH FNODE>0, TNODE>0 and TERMFLAG!=0 IS EMPTY\nRUN EXECUTION TERMINATED.",sep=""))
+      message(paste0("HYDSEQ VARIABLE CANNOT BE CALCULATED\n DATASET WITH FNODE>0, TNODE>0 and TERMFLAG!=0 IS EMPTY\nRUN EXECUTION TERMINATED."))
       if (batch_mode=="yes"){#if batch output message to log
         cat("HYDSEQ VARIABLE CANNOT BE CALCULATED\n DATASET WITH FNODE>0, TNODE>0 and TERMFLAG!=0 IS EMPTY\nRUN EXECUTION TERMINATED.",sep="")
       }
@@ -60,9 +60,69 @@ createVerifyReachAttr <- function(if_verify_demtarea,calculate_reach_attribute_l
       
       #calculate reach attributes if on the list
       if (length(grep("hydseq",calculate_reach_attribute_list))!=0){ 
-        
+        message("Running calculation of HYDSEQ (hydrologic sequencing numbers)...")
         #calculate hydseq variable, also headflag and demtarea if called for
-        hydseq_data <- hydseq(sub1,calculate_reach_attribute_list)
+        if (checkDynamic(sub1)){
+        if (length(names(sub1)[names(sub1)=="year"])!=0){
+          if (all(is.na(sub1$year))){
+          #loop through seasons
+            hydseq_data<-sub1[0,]
+            for (s in unique(sub1$season)){
+              data1_sub<-sub1[sub1$season==s,]
+              if (nrow(data1_sub)!=0){
+              startSeq<-nrow(hydseq_data)+1
+              hydseq_datasub <- hydseq(data1_sub,calculate_reach_attribute_list,startSeq)
+              hydseq_data<-rbind(hydseq_data,hydseq_datasub)
+              }
+            }
+            }else if (length(names(sub1)[names(sub1)=="season"])==0){
+          #loop through year
+              hydseq_data<-sub1[0,]
+              for (y in unique(sub1$year)){
+                data1_sub<-sub1[sub1$year==y,]
+                if (nrow(data1_sub)!=0){
+                startSeq<-nrow(hydseq_data)+1
+                hydseq_datasub <- hydseq(data1_sub,calculate_reach_attribute_list,startSeq)
+                hydseq_data<-rbind(hydseq_data,hydseq_datasub)
+                }
+              }   
+            }else if (length(names(sub1)[names(sub1)=="season"])!=0){
+              if (!all(is.na(sub1$season))){#loop through season and year
+                hydseq_data<-sub1[0,]
+                for (y in unique(sub1$year)){
+                  for (s in unique(sub1$season)){
+                    data1_sub<-sub1[sub1$year==y & sub1$season==s,]
+                    if (nrow(data1_sub)!=0){
+                    startSeq<-nrow(hydseq_data)+1
+                    hydseq_datasub <- hydseq(data1_sub,calculate_reach_attribute_list,startSeq)
+                    hydseq_data<-rbind(hydseq_data,hydseq_datasub)
+                    }
+                  }#end for s
+                }#end for y
+              }#end for !all(is.na(seasons))
+            }#names seasons
+        }else{# no year in names
+          if (length(names(sub1)[names(sub1)=="season"])!=0){
+            if (!all(is.na(sub1$season))){#loop through season
+          #loop through seasons
+              hydseq_data<-sub1[0,]
+              for (s in unique(sub1$season)){
+                data1_sub<-sub1[sub1$season==s,]
+                if (nrow(data1_sub)!=0){
+                startSeq<-nrow(hydseq_data)+1
+                hydseq_datasub <- hydseq(data1_sub,calculate_reach_attribute_list,startSeq)
+                hydseq_data<-rbind(hydseq_data,hydseq_datasub)
+                }
+              }
+            }
+          }
+        }#no year in names
+
+          
+            }else{
+              hydseq_data <- hydseq(sub1,calculate_reach_attribute_list)
+          }
+
         
         waterid <- hydseq_data$waterid
         hydseq <- hydseq_data$hydseq
@@ -154,7 +214,7 @@ createVerifyReachAttr <- function(if_verify_demtarea,calculate_reach_attribute_l
       
       # add attributes to data1
       for (i in 1:length(calculate_reach_attribute_list)) {
-        name1 <- paste("hs_data <- data.frame(waterid,",calculate_reach_attribute_list[i],")",sep="")
+        name1 <- paste0("hs_data <- data.frame(waterid,",calculate_reach_attribute_list[i],")")
         eval(parse(text=name1))
         hs_data <- hs_data[hs_data$waterid != 0, ] # eliminate 0 cases where vector dimension max > no. reaches
         data1 <- merge(data1,hs_data,by="waterid",all.y=TRUE,all.x=TRUE)

@@ -14,11 +14,11 @@
 updateVariable<-function(input,output, session,choices, mapType){
   if (mapType=="Site Attributes"){
     category<-"Data Dictionary Variable"
-  }else if (mapType=="Source Change Scenarios"){
+  }else if (grepl("Scenarios",mapType)){
     
     if (input$mapCategory!=""){
-      category<-ifelse(input$mapCategory=="Load Predictions for Changed Sources","Load Predictions",
-                       ifelse(input$mapCategory=="Yield Predictions for Changed Sources","Yield Predictions","Relative Change in Load"))
+      category<-ifelse(input$mapCategory=="Load Predictions for Changed Model Variables","Load Predictions",
+                       ifelse(input$mapCategory=="Yield Predictions for Changed Model Variables","Yield Predictions","Relative Change in Load"))
       
     }else{
       category<-input$mapCategory

@@ -33,7 +33,7 @@ checkClassificationVars<-function(subdata,class.input.list,batch_mode){
   #check that no NAs exist in the user definced classvar and class_landuse variables 
   colsOrder<-c(na.omit(c(classvar,class_landuse)))
   if (length(colsOrder)!=0){
-    cols<-subdata[,which(names(subdata) %in% colsOrder)]
+    cols<-subdata[,which(names(subdata) %in% colsOrder),drop=FALSE]
     cols<-cols[,match(colsOrder,names(cols))]
     for (c in 1:length(cols)){
       check<-cols[[c]]

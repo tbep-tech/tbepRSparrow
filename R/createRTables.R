@@ -28,7 +28,7 @@ createRTables<-function(selectSources,data_names, mapping.input.list){
     selectSources<-c("",selectSources)
   }
   #set up table with all options
-  allSourcesDFno<-data.frame(Source = factor(as.character(""),levels = selectSources),
+  allSourcesDFno<-data.frame(ModelVariables = factor(as.character(""),levels = selectSources),
                              PercentChange = as.character(""),
                              ChangeCoefficient = factor(as.character("no"),levels = c("yes","no")),
                              SelectionVariable = factor(as.character(""),levels = c("",as.character(data_names$sparrowNames))),
@@ -41,7 +41,7 @@ createRTables<-function(selectSources,data_names, mapping.input.list){
                              stringsAsFactors = FALSE )
   
   #for all sources same reach selection
-  sourceRed<-data.frame(Source = factor(as.character(""),levels = selectSources),
+  sourceRed<-data.frame(ModelVariables = factor(as.character(""),levels = selectSources),
                         PercentChange = as.character(""),
                         ChangeCoefficient = factor(as.character("no"),levels = c("yes","no")),
                         LanduseConversion = factor(as.character("None"),levels = c("None",selectSources),exclude = ""),
@@ -67,8 +67,7 @@ createRTables<-function(selectSources,data_names, mapping.input.list){
                                          "scenario")))
     sub$setting<-c
     sub$settingValue<-ifelse(length(setting)!=1,
-                             paste("c(",paste("'",setting,"'",collapse=",",sep=""),")",sep=""),
-                             #paste("'",setting,"'",sep=""))
+                             paste0("c(",paste("'",setting,"'",collapse=","),")"),
                              setting)
     
     cosmeticDF<-rbind(cosmeticDF,sub)

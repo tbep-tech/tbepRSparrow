@@ -37,7 +37,10 @@
 #'       `ifelse((parmMax > 0 | (parmType=="DELIVF" & parmMax>=0)) & (parmMin<parmMax) & ((parmType=="SOURCE" & 
 #'       parmMin>=0) | parmType!="SOURCE")`
 #'@param sitedata Sites selected for calibration using `subdata[(subdata$depvar > 0
-#'                & subdata$calsites==1), ]`
+#'                & subdata$calsites==1), ]`. The object contains the dataDictionary 
+#'                ‘sparrowNames’ variables, with records sorted in hydrological 
+#'                (upstream to downstream) order (see the documentation Chapter 
+#'                sub-section 5.1.2 for details)
 #'@param estimate.list list output from `estimate.R`
 #'@param JacobResults list output of Jacobian first-order partial derivatives of the model 
 #'       residuals `estimateNLLSmetrics.R` contained in the estimate.list object.  For more details see 
@@ -83,7 +86,7 @@ goShinyPlot<-function(input, output, session, choices, button, badSettings,errMs
                           scenario.input.list = scenario.input.list, 
                           mapping.input.list = mapping.input.list),
              parentObj = list(NA,NA, NA)) 
-  
+
   #compile all user input and convert hottables to dataframes
   compileALL<-compileALL(input, output, session, path_results, choices)
   compiledInput<-compileALL$compiledInput
@@ -95,54 +98,54 @@ goShinyPlot<-function(input, output, session, choices, button, badSettings,errMs
   if (is.na(errMsg)){
     
     #load predicitons if available
-    if (file.exists(paste(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predict.list",sep=""))){
-      load(paste(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predict.list",sep=""))
+    if (file.exists(paste0(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predict.list"))){
+      load(paste0(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predict.list"))
     }
     
     #estimation objects
-    if (file.exists(paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_JacobResults",sep=""))){
+    if (file.exists(paste0(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_JacobResults"))){
       if (!exists("JacobResults")){
-        load(paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_JacobResults",sep=""))
+        load(paste0(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_JacobResults"))
       }
     }
     
     #setup output file paths for batch and pdf output
     if (button=="savePDF" | input$batch=="Batch"){
-      if (!dir.exists(paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,sep=""))){
-        dir.create(paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,sep=""))
+      if (!dir.exists(paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep))){
+        dir.create(paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep))
       }
       if (input$mapType=="Stream"){
-        if (!dir.exists(paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Stream",.Platform$file.sep,sep=""))){
-          dir.create(paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Stream",.Platform$file.sep,sep=""))
+        if (!dir.exists(paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Stream",.Platform$file.sep))){
+          dir.create(paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Stream",.Platform$file.sep))
         }
-        filename<- paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Stream",.Platform$file.sep,run_id,"_",compiledInput$var,".pdf",sep="")
-        batchFilename<-paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Stream",.Platform$file.sep,"batch_",format(Sys.time(),"%Y-%m-%d_%H.%M.%S"),".RData",sep="")
+        filename<- paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Stream",.Platform$file.sep,run_id,"_",compiledInput$var,".pdf")
+        batchFilename<-paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Stream",.Platform$file.sep,"batch_",format(Sys.time(),"%Y-%m-%d_%H.%M.%S"),".RData")
         
       }else if (input$mapType=="Catchment"){
-        if (!dir.exists(paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Catchment",.Platform$file.sep,sep=""))){
-          dir.create(paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Catchment",.Platform$file.sep,sep=""))
+        if (!dir.exists(paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Catchment",.Platform$file.sep))){
+          dir.create(paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Catchment",.Platform$file.sep))
         }
-        filename<- paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Catchment",.Platform$file.sep,run_id,"_",compiledInput$var,".pdf",sep="")
-        batchFilename<-paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Catchment",.Platform$file.sep,"batch_",format(Sys.time(),"%Y-%m-%d_%H.%M.%S"),".RData",sep="")
+        filename<- paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Catchment",.Platform$file.sep,run_id,"_",compiledInput$var,".pdf")
+        batchFilename<-paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"Catchment",.Platform$file.sep,"batch_",format(Sys.time(),"%Y-%m-%d_%H.%M.%S"),".RData")
         
       }else if (input$mapType=="Site Attributes"){
-        if (!dir.exists(paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"SiteAttributes",.Platform$file.sep,sep=""))){
-          dir.create(paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"SiteAttributes",.Platform$file.sep,sep=""))
+        if (!dir.exists(paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"SiteAttributes",.Platform$file.sep))){
+          dir.create(paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"SiteAttributes",.Platform$file.sep))
         }
-        filename<- paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"SiteAttributes",.Platform$file.sep,run_id,"_SiteAttributes_",compiledInput$var,".pdf",sep="")
-        batchFilename<-paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"SiteAttributes",.Platform$file.sep,"batch_",format(Sys.time(),"%Y-%m-%d_%H.%M.%S"),".RData",sep="")
+        filename<- paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"SiteAttributes",.Platform$file.sep,run_id,"_SiteAttributes_",compiledInput$var,".pdf")
+        batchFilename<-paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"SiteAttributes",.Platform$file.sep,"batch_",format(Sys.time(),"%Y-%m-%d_%H.%M.%S"),".RData")
         
       }else{#add check for if scenario exists ask user if proceed
-        if (!dir.exists(paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,compiledInput$scenarioName,.Platform$file.sep,
-                              as.character(compiledInput$outType),.Platform$file.sep,sep=""))){
-          dir.create(paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,compiledInput$scenarioName,.Platform$file.sep,
-                           as.character(compiledInput$outType),.Platform$file.sep,sep=""))
+        if (!dir.exists(paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,compiledInput$scenarioName,.Platform$file.sep,
+                              as.character(compiledInput$outType),.Platform$file.sep))){
+          dir.create(paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,compiledInput$scenarioName,.Platform$file.sep,
+                           as.character(compiledInput$outType),.Platform$file.sep))
         }
-        filename<- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,compiledInput$scenarioName,.Platform$file.sep,
+        filename<- paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,compiledInput$scenarioName,.Platform$file.sep,
                          as.character(compiledInput$outType),.Platform$file.sep,
-                         compiledInput$scenarioName,"_",run_id,"_",compiledInput$var,".pdf",sep="")
+                         compiledInput$scenarioName,"_",run_id,"_",compiledInput$var,".pdf")
 
-        batchFilename<-paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,compiledInput$scenarioName,.Platform$file.sep,"batch_",format(Sys.time(),"%Y-%m-%d_%H.%M.%S"),".RData",sep="")
+        batchFilename<-paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,compiledInput$scenarioName,.Platform$file.sep,"batch_",format(Sys.time(),"%Y-%m-%d_%H.%M.%S"),".RData")
         
       }
       
@@ -194,22 +197,98 @@ goShinyPlot<-function(input, output, session, choices, button, badSettings,errMs
         }else if (input$mapType=="Site Attributes"){
           showModal(dataModal())
           
-          p<-mapSiteAttributes(#Rshiny
-            compiledInput,NA, path_gis, sitedata, LineShapeGeo,data_names,TRUE,
-            #regular
-            mapColumn,mapdata,GeoLines,mapping.input.list,
-            strTitle,unitAttr,batch_mode)
+          # p<-mapSiteAttributes(#Rshiny
+          #   compiledInput,NA, path_gis, sitedata, LineShapeGeo,data_names,TRUE,
+          #   #regular
+          #   mapColumn,mapdata,GeoLines,mapping.input.list,
+          #   strTitle,unitAttr,batch_mode)
+
+          
+          mapType<-"site"
+          aggFuncs<-c("mean","median","min","max")
+          
+          map_years<-as.character(compiledInput$yearSelect)
+          if (length(map_years)!=0 & !map_years[1] %in% aggFuncs){
+            map_years<-as.numeric(map_years)
+          }else if (length(map_years)==0){
+            map_years<-NA
+          }
+          map_seasons<-as.character(compiledInput$seasonSelect)
+          if (length(map_seasons)==0){
+            map_seasons<-NA
+          }
+          
+
+          mapColumn<-as.character(compiledInput$var)
+          attrData<-eval(parse(text=paste0("sitedata$",as.character(compiledInput$var))))
+          MAPID <- eval(parse(text=paste0("sitedata$","waterid_for_RSPARROW_mapping") )) 
+          commonvar<-"tempID"
+          agg_map.list<-aggDynamicMapdata(map_years,map_seasons,
+                                          enable_plotlyMaps = as.character(compiledInput$enablePlotly),
+                                          add_plotlyVars = as.character(compiledInput$plotlyDrop),
+                                          aggFuncs,vvar = attrData,MAPID,commonvar,subdata = sitedata)
+          unPackList(lists = list(agg_map.list = agg_map.list),
+                     parentObj = list(NA)) 
+
+          #prep aggdata for plots
+          if (!map_years %in% aggFuncs & !map_seasons %in% aggFuncs){
+           mapdata<-merge(uniqueSubdata,mapdata,by=commonvar) 
+          }else{
+            mapdata<-merge(uniqueSubdata,mapdata, 
+                         by=names(mapdata)[names(mapdata) %in% names(uniqueSubdata)]) 
+          }
+          
+          names(mapdata)[names(mapdata)=="vvar"]<-mapColumn
+          if (map_years %in% aggFuncs | map_seasons %in% aggFuncs){
+           names(mapdata)[names(mapdata)==commonvar]<-"mapping_waterid"
+           add_plotlyVars<-as.character(ifelse(add_plotlyVars=="waterid","mapping_waterid",add_plotlyVars))
+          }else{
+           names(mapdata)[names(mapdata)==commonvar]<-"waterid_for_RSPARROW_mapping" 
+           add_plotlyVars<-as.character(ifelse(add_plotlyVars=="waterid","waterid_for_RSPARROW_mapping",add_plotlyVars))
+          }
+          
+          
+          plots<-setupDynamicMaps(mapdata,map_years,map_seasons,
+                                  mapPageGroupBy=NA,mapsPerPage = 4, Rshiny=TRUE, 
+                                  enable_plotlyMaps = as.character(compiledInput$enablePlotly))
+
+          mapLoopInput.list<-list(plots = plots,
+                                  input = compiledInput,
+                                  attr=NA, 
+                                  path_gis = file.output.list$path_gis, 
+                                  sitedata = mapdata, 
+                                  LineShapeGeo = mapping.input.list$LineShapeGeo,
+                                  data_names = data_names,
+                                  Rshiny = TRUE,
+                                  #regular
+                                  #mapColumn = mapColumn,
+                                  dmapfinal = mapdata,
+                                  GeoLines = NA,
+                                  mapping.input.list = mapping.input.list,
+                                  #strTitle = strTitle,
+                                  #unitAttr = unitAttr,
+                                  batch_mode = batch_mode)
+
+if (length(names(mapdata)[names(mapdata) %in% c("lat","lon")])!=0){
+          map_loop.list<-mapLoopStr(mapType,mapLoopInput.list)
+
+          
+          unPackList(lists = list(map_loop.list = map_loop.list),
+                     parentObj = list(NA))
+          p<-pa
           assign("p",p,envir = .GlobalEnv)
           return(p) 
-          
-        }else if (input$mapType=="Source Change Scenarios"){
+}else{
+  message("lat/lon NOT unique to timestep, Mapping cannot be completed")
+}
+        }else if (grepl("Scenarios",input$mapType)){
           showModal(dataModal())
           #     compiledInput<-convertHotTables(compiledInput)
           #get source reduction functions
           compiledInput<-sourceRedFunc(compiledInput)
           
           #delete previously generated scenario output with same scenario name
-          unlink(list.files(paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,compiledInput$scenarioName,.Platform$file.sep,sep=""),full.names = TRUE),recursive = TRUE)
+          unlink(list.files(paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,compiledInput$scenarioName,.Platform$file.sep),full.names = TRUE),recursive = TRUE)
           p<- predictScenarios(#Rshiny
             compiledInput,NA, tolower(as.character(compiledInput$outType)),TRUE,
             #regular
@@ -251,20 +330,12 @@ goShinyPlot<-function(input, output, session, choices, button, badSettings,errMs
             print(p)
           }else if (class(p)[1]=="plotly" | class(p)[1]=="leaflet") {
             reportPath<-paste0(path_master,"shinySavePlot.Rmd")
-            #edit title of report
-            reportTitle<-run_id
-            #read Rmd file as text
-            x <- readLines(reportPath)
-            #find where title is designated
-            editthis<-x[which(regexpr("title:",gsub(" ","",x))>0)]
-            #replace with current reportTitle
-            y <- gsub( editthis, paste0("title: '",reportTitle,"'"), x )
-            #overwrite the file
-            cat(y, file=reportPath, sep="\n") 
+
             #ptm <- proc.time()
             rmarkdown::render(
               reportPath, params = list(
-                p = p
+                p = p,
+                run_id = run_id
               ),
               output_file = filename, quiet = TRUE
             )
@@ -310,14 +381,14 @@ goShinyPlot<-function(input, output, session, choices, button, badSettings,errMs
               #regular
               mapColumn,mapdata,GeoLines,mapping.input.list,
               strTitle,unitAttr,batch_mode)
-          }else if (input$mapType=="Source Change Scenarios"){
+          }else if (grepl("Scenarios",input$mapType)){
             showModal(dataModal())
             #     compiledInput<-convertHotTables(compiledInput)
             #get source reduction functions
             compiledInput<-sourceRedFunc(compiledInput)
             
             #delete previously generated scenario output with same scenario name
-            unlink(list.files(paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,compiledInput$scenarioName,.Platform$file.sep,sep=""),full.names = TRUE),recursive = TRUE)
+            unlink(list.files(paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,compiledInput$scenarioName,.Platform$file.sep),full.names = TRUE),recursive = TRUE)
             p<- predictScenarios(#Rshiny
               compiledInput,NA, tolower(as.character(compiledInput$outType)),TRUE,
               #regular
@@ -348,20 +419,12 @@ goShinyPlot<-function(input, output, session, choices, button, badSettings,errMs
             #ggsave(p,height = 7, width = 7,filename = filename, units = "in")
           }else if (class(p)[1]=="plotly" | class(p)[1]=="leaflet") {
             reportPath<-paste0(path_master,"shinySavePlot.Rmd")
-            #edit title of report
-            reportTitle<-run_id
-            #read Rmd file as text
-            x <- readLines(reportPath)
-            #find where title is designated
-            editthis<-x[which(regexpr("title:",gsub(" ","",x))>0)]
-            #replace with current reportTitle
-            y <- gsub( editthis, paste0("title: '",reportTitle,"'"), x )
-            #overwrite the file
-            cat(y, file=reportPath, sep="\n") 
+
             #ptm <- proc.time()
             rmarkdown::render(
               reportPath, params = list(
-                p = p
+                p = p,
+                run_id = run_id
               ),
               output_file = filename, quiet = TRUE
             )
@@ -398,7 +461,7 @@ goShinyPlot<-function(input, output, session, choices, button, badSettings,errMs
         )
       ))
       
-      if (input$mapType=="Source Change Scenarios"){
+      if (grepl("Scenarios",input$mapType)){
         compiledInput<-sourceRedFunc(compiledInput)
       }
       
@@ -444,9 +507,9 @@ goShinyPlot<-function(input, output, session, choices, button, badSettings,errMs
       
       #save batchfileName to batch folder in master
       save(list = c("path_main","batchFilename","RSPARROW_errorOption"),
-           file=paste(path_main,.Platform$file.sep,"batch",.Platform$file.sep,"interactiveBatch.RData",sep=""))
+           file=paste0(path_main,.Platform$file.sep,"batch",.Platform$file.sep,"interactiveBatch.RData"))
       
-      system(paste(Sys.which("Rscript.exe")," ",file.path(paste(path_main,.Platform$file.sep,"batch",.Platform$file.sep,"interactiveBatchRun.R",sep="")),sep=""), wait = FALSE, invisible = FALSE)
+      system(paste0(Sys.which("Rscript.exe")," ",file.path(paste0(path_main,.Platform$file.sep,"batch",.Platform$file.sep,"interactiveBatchRun.R"))), wait = FALSE, invisible = FALSE)
       
       
       

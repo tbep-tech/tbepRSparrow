@@ -52,9 +52,14 @@ if (length(res)!=0){
               "mapBreaks.R",
               "named.list.R",
               "unPackList.R",
-              "addMarkerText.R")
+              "addMarkerText.R",
+              "setupDynamicMaps.R",
+              "test_addPlotlyvars.R",
+              "aggDynamicMapdata.R",
+              "mapLoopStr.R",
+              "predictMaps_single.R")
   for (r in routines){
-    source(paste(path_main,.Platform$file.sep,"R",.Platform$file.sep,r,sep=""))
+    source(paste0(path_main,.Platform$file.sep,"R",.Platform$file.sep,r))
   }
   
   unPackList(lists = list(file.output.list = file.output.list,
@@ -70,10 +75,18 @@ if (length(res)!=0){
   suppressWarnings(suppressMessages(library(rmarkdown)))
   suppressWarnings(suppressMessages(library(knitr)))
   suppressWarnings(suppressMessages(library(tools)))
+  suppressWarnings(suppressMessages(library(gridExtra)))
+  suppressWarnings(suppressMessages(library(ggplot2)))
+  suppressWarnings(suppressMessages(library(gplots)))
+  suppressWarnings(suppressMessages(library(mapview)))
+  suppressWarnings(suppressMessages(library(leaflet)))
+  suppressWarnings(suppressMessages(library(leaflet.extras)))
+  suppressWarnings(suppressMessages(library(htmltools)))
+  suppressWarnings(suppressMessages(library(htmlwidgets)))
   
   
   #start sink
-  sink(file=paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"batch",.Platform$file.sep,run_id,"_log.txt",sep=""),split=FALSE)
+  sink(file=paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"batch",.Platform$file.sep,run_id,"_log.txt"),split=FALSE)
   cat("\n \n")
   cat("RSPARROW MODEL NAME: ",run_id,sep="")
   cat("\n \n")
@@ -89,22 +102,22 @@ if (length(res)!=0){
   ptm <- proc.time()
   
   #method 1
-  if (file.exists(paste(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predictList",sep=""))){
-    load(paste(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predictList",sep="")) }
+  if (file.exists(paste0(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predictList"))){
+    load(paste0(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predictList")) }
   #load individual object previously saved
   
-  load(paste(path_results,.Platform$file.sep,"data",.Platform$file.sep,"subdata",sep=""))
+  load(paste0(path_results,.Platform$file.sep,"data",.Platform$file.sep,"subdata"))
   # load all other required objects
-  load(paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"batch",.Platform$file.sep,"batch.RData",sep=""))
+  load(paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"batch",.Platform$file.sep,"batch.RData"))
   
   
   
   #run predictMaps
   
-  if (Rshiny==FALSE){
+  if (!Rshiny){
     input<-list(mapType=NA, batch="no",scenarioName="",var="")
   }
-  if (mapScenarios==FALSE){
+  if (!mapScenarios){
     scenario_map_list<-NA
     predictScenarios.list<-NA
     scenario_name<-NA

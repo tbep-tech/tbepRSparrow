@@ -31,7 +31,10 @@
 #'       ((parmType=="SOURCE" & parmMin>=0) | parmType!="SOURCE")`
 #'@param subdata data.frame input data (subdata)
 #'@param sitedata Sites selected for calibration using `subdata[(subdata$depvar > 0
-#'                & subdata$calsites==1), ]`
+#'                & subdata$calsites==1), ]`. The object contains the dataDictionary 
+#'                ‘sparrowNames’ variables, with records sorted in hydrological 
+#'                (upstream to downstream) order (see the documentation Chapter 
+#'                sub-section 5.1.2 for details)
 #'@param DataMatrix.list named list of 'data' and 'beta' matrices and 'data.index.list' 
 #'                       for optimization
 #'@param batch_mode yes/no character string indicating whether RSPARROW is being run in batch 
@@ -63,12 +66,12 @@ estimateNLLSmetrics <- function(if_estimate,if_estimate_simulation,if_sparrowEst
   class <- array(0,dim=c(nrow=nrow(sitedata),ncol=length(classvar))) 
   for (k in 1:length(classvar)) { 
     for (i in 1:nrow(sitedata)) {
-      class[i,k] <- as.numeric(eval(parse(text=paste("sitedata$",classvar[k],"[",i,"]",sep=""))))
+      class[i,k] <- as.numeric(eval(parse(text=paste0("sitedata$",classvar[k],"[",i,"]"))))
     } 
   } 
   
   # contiguous class variables by reach
-  classrch <- as.numeric(eval(parse(text=paste("subdata$",classvar[1],sep=""))))  # used to compute RMSE by class
+  classrch <- as.numeric(eval(parse(text=paste0("subdata$",classvar[1]))))  # used to compute RMSE by class
   
   
   # Obtain predicted, observed, residual values
@@ -419,7 +422,7 @@ estimateNLLSmetrics <- function(if_estimate,if_estimate_simulation,if_sparrowEst
   HesResults <- alist(HesResults=)$SelParmValues$beta0   # set to NULL
   
   # load the Hessian results if object exists
-  objfile <- paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_HessianResults",sep="")
+  objfile <- paste0(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_HessianResults")
   if(file.exists(objfile) == TRUE) {
     load(objfile)
   }
@@ -512,7 +515,7 @@ estimateNLLSmetrics <- function(if_estimate,if_estimate_simulation,if_sparrowEst
     HesResults <- named.list(Parmnames,Hesnames,oEstimate,oSEh,oTh,opTh,cov2,cor2,HesRunTime)
     
     # store Hessian estimates in object as list
-    objfile <- paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_HessianResults",sep="")
+    objfile <- paste0(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_HessianResults")
     save(HesResults,file=objfile)
     
   }   # end ifHess check
@@ -626,7 +629,7 @@ estimateNLLSmetrics <- function(if_estimate,if_estimate_simulation,if_sparrowEst
                                   leverage,leverageCrit)
   
   # store Jacobian estimates in object as list
-  objfile <- paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_JacobResults",sep="")
+  objfile <- paste0(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_JacobResults")
   save(JacobResults,file=objfile)
   
   

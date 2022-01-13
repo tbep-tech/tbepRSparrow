@@ -8,7 +8,10 @@
 #'@param input top level interactive user input in Shiny app
 #'@param choices data.frame output of function createInteractiveChoices.R
 #'@param sitedata Sites selected for calibration using `subdata[(subdata$depvar > 0
-#'                & subdata$calsites==1), ]`
+#'                & subdata$calsites==1), ]`. The object contains the dataDictionary 
+#'                ‘sparrowNames’ variables, with records sorted in hydrological 
+#'                (upstream to downstream) order (see the documentation Chapter 
+#'                sub-section 5.1.2 for details)
 #'@param add_plotlyVars character vector indicating user selected variables to add to plot 
 #'                      hover text
 

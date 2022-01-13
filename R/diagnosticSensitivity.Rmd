@@ -50,11 +50,11 @@ unPackList(lists = list(SelParmValues = SelParmValues,
 class <- array(0,dim=c(nrow=nrow(sitedata),ncol=length(classvar))) 
 for (k in 1:length(classvar)) { 
   for (i in 1:nrow(sitedata)) {
-    class[i,k] <- as.numeric(eval(parse(text=paste("sitedata$",classvar[k],"[",i,"]",sep=""))))
+    class[i,k] <- as.numeric(eval(parse(text=paste0("sitedata$",classvar[k],"[",i,"]"))))
   } 
 }
 depvar <- subdata$depvar
-xclass <- eval(parse(text=paste("subdata$",classvar[1],sep="")))
+xclass <- eval(parse(text=paste0("subdata$",classvar[1])))
 ```
 
 ```{r, eval=TRUE, echo=FALSE,warning=FALSE, message = FALSE, fig.height=8, fig.width=8} 
@@ -123,7 +123,7 @@ for (i in 1:length(Estimate)) {
 }   
 # save results to directory and global environment
 sensitivities.list <- named.list(xparm,xmed,xiqr,xsens)
-objfile <- paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_sensitivities.list",sep="") 
+objfile <- paste0(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_sensitivities.list") 
 save(sensitivities.list,file=objfile)
 
 # Plot median and IQR for each parameter
@@ -154,28 +154,29 @@ data<-data.frame(x = xvalue2)
 data<-cbind(data,xx)
 
 
-p <- plotlyLayout(NA,data$xmed, log = "", nTicks = 5, digits = 0,
+plotlyLayout(NA,data$xmed, log = "", nTicks = 5, digits = 0,
                   xTitle = "",  xZeroLine = FALSE, xLabs = as.character(data$xparm),
                   yTitle = "CHANGE IN PREDICTED VALUES (%)",  yZeroLine = FALSE,ymin = ymin, ymax = ymax,
                   plotTitle = "PARAMETER SENSITIVITY TO 1% CHANGE",
-                  legend = TRUE,showPlotGrid = showPlotGrid)
-p <- p %>% add_trace(data = data, x = ~xparm, y = ~xmed, type = 'scatter', mode = 'markers',color = I("#0000FF"),
+                  legend = TRUE,showPlotGrid = showPlotGrid) %>%
+add_trace(data = data, x = ~xparm, y = ~xmed, type = 'scatter', mode = 'markers',color = I("#0000FF"),
                      name = '90% Interval',
                      error_y = ~list(symetric = FALSE,
                                      array = supper,
                                      arrayminus = slower,
-                                     color = "#0000FF"))
-p <- p %>% add_trace(data  = data, x = ~xparm, y = ~xmed, type = 'scatter', mode = 'markers',color = I("#FF0000"),
+                                     color = "#0000FF")) %>%
+add_trace(data  = data, x = ~xparm, y = ~xmed, type = 'scatter', mode = 'markers',color = I("#FF0000"),
                      name = '50% Interval',
                      error_y = ~list(symetric = FALSE,
                                      array = xupper,
                                      arrayminus = xlower,
-                                     color = "#FF0000"))
+                                     color = "#FF0000")) %>%
 
-p <- p %>% add_trace(data  = data, x = ~xparm, y = ~xmed, type = 'scatter', mode = 'markers',color = I("black"),name = 'median')#,
+add_trace(data  = data, x = ~xparm, y = ~xmed, type = 'scatter', mode = 'markers',color = I("black"),
+          name = 'median')
 
 
-p
+
 ```
 
 ```{r pagebreak6, results='asis', echo=FALSE}
@@ -185,25 +186,25 @@ cat("<P style='page-break-before: always'>")
 ```{r, eval=TRUE, echo=FALSE,warning=FALSE, message = FALSE, fig.height=8, fig.width=8} 
 
 # Log y axis
-p <- plotlyLayout(NA,data$xmed, log = "y", nTicks = 5, digits = 0,
+plotlyLayout(NA,data$xmed, log = "y", nTicks = 5, digits = 0,
                   xTitle = "",  xZeroLine = FALSE, xLabs = as.character(data$xparm),
                   yTitle = "CHANGE IN PREDICTED VALUES (%)",  yZeroLine = FALSE,ymin = ymin, ymax = ymax,
                   plotTitle = "PARAMETER SENSITIVITY TO 1% CHANGE",
-                  legend = TRUE,showPlotGrid = showPlotGrid)
-p <- p %>% add_trace(data = data, x = ~xparm, y = ~xmed, type = 'scatter', mode = 'markers',color = I("#0000FF"),
+                  legend = TRUE,showPlotGrid = showPlotGrid) %>%
+add_trace(data = data, x = ~xparm, y = ~xmed, type = 'scatter', mode = 'markers',color = I("#0000FF"),
                      name = '90% Interval',
                      error_y = ~list(symetric = FALSE,
                                      array = supper,
                                      arrayminus = slower,
-                                     color = "#0000FF"))
-p <- p %>% add_trace(data  = data, x = ~xparm, y = ~xmed, type = 'scatter', mode = 'markers',color = I("#FF0000"),
+                                     color = "#0000FF")) %>%
+add_trace(data  = data, x = ~xparm, y = ~xmed, type = 'scatter', mode = 'markers',color = I("#FF0000"),
                      name = '50% Interval',
                      error_y = ~list(symetric = FALSE,
                                      array = xupper,
                                      arrayminus = xlower,
-                                     color = "#FF0000"))
+                                     color = "#FF0000")) %>%
 
-p <- p %>% add_trace(data  = data, x = ~xparm, y = ~xmed, type = 'scatter', mode = 'markers',color = I("black"),name = 'median')#,
+add_trace(data  = data, x = ~xparm, y = ~xmed, type = 'scatter', mode = 'markers',color = I("black"),name = 'median')#,
 
-p
+
 ```

@@ -36,23 +36,23 @@ checkMissingSubdataVars <- function(subdata,betavalues,file.output.list,batch_mo
     fixMissingSubdataVariable<-datalstMissingdata[1:k]
     for (i in unique(fixMissingSubdataVariable)){
       if(i %in% xlnames & i %in% datalstCheck & i %in% vrnames){
-        problemFile<-paste("BOTH the ",path_results,run_id,"_parameters.csv and 
-                         the ",path_results,run_id,"_dataDictionary.csv files",sep="")
+        problemFile<-paste0("BOTH the ",path_results,run_id,"_parameters.csv and 
+                         the ",path_results,run_id,"_dataDictionary.csv files")
       }else if (i %in% datalstCheck){
         problemFile<-"The required and fixed variables list"
       }else if (i %in% xlnames){
-        problemFile<-paste("The ",path_results,run_id,"_parameters.csv file",sep="")
+        problemFile<-paste0("The ",path_results,run_id,"_parameters.csv file")
       }else{
-        problemFile<-paste("The ",path_results,run_id,"_dataDictionary.csv file",sep="")
+        problemFile<-paste0("The ",path_results,run_id,"_dataDictionary.csv file")
       }
       if (i %in% c(getVarList()$reqNames,xlnames)){
-        msgText<-paste(" \nERROR: THIS REQUIRED VARIABLE FROM \n",problemFile,
-                       " \nHAS ALL MISSING OR ZERO VALUES IN SUBDATA:",i,"\n \nRUN EXECUTION TERMINATED.\n ",sep="")
+        msgText<-paste0(" \nERROR: THIS REQUIRED VARIABLE FROM \n",problemFile,
+                       " \nHAS ALL MISSING OR ZERO VALUES IN SUBDATA:",i,"\n \nRUN EXECUTION TERMINATED.\n ")
         message(msgText)
         errorOccurred("checkMissingSubdataVars.R",batch_mode)
       }else{
-        msgText<-paste(" \nWARNING: THIS REQUIRED VARIABLE FROM \n",problemFile,
-                       " \nHAS ALL MISSING OR ZERO VALUES IN SUBDATA:",i,"\n ",sep="")
+        msgText<-paste0(" \nWARNING: THIS REQUIRED VARIABLE FROM \n",problemFile,
+                       " \nHAS ALL MISSING OR ZERO VALUES IN SUBDATA:",i,"\n ")
       }
       message(msgText)
       

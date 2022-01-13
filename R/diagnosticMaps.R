@@ -17,13 +17,16 @@
 #'                          CRStext, convertShapeToBinary.list, map_siteAttributes.list, 
 #'                          residual_map_breakpoints, site_mapPointScale, 
 #'                          if_verify_demtarea_maps
-#'@param sitedata Sites selected for calibration using `subdata[(subdata$depvar > 0  
-#'                & subdata$calsites==1), ]`
+#'@param sitedata Sites selected for calibration using `subdata[(subdata$depvar > 0
+#'                & subdata$calsites==1), ]`. The object contains the dataDictionary 
+#'                ‘sparrowNames’ variables, with records sorted in hydrological 
+#'                (upstream to downstream) order (see the documentation Chapter 
+#'                sub-section 5.1.2 for details)
 
 
 diagnosticMaps<-function(mapColumn,mapdata,GeoLines,
-                         map.list,strTitle,mapping.input.list,sitedata){
-  
+                         map.list,strTitle,mapping.input.list,sitedata,p, usedColors,
+                         legendPos,legendJus, subTitle){
   
   # Setup variable lists 
   # create global variable from list names (mapping.input.list)
@@ -93,11 +96,19 @@ diagnosticMaps<-function(mapColumn,mapdata,GeoLines,
   if (enable_plotlyMaps=="no"){
     pnch <- residualPointStyle
     par(mfrow=c(1,1))    # 1 plots on one page
-    
+    if (is.na(p)){
     p <- ggplot() +
       geom_sf(data = GeoLines, size = 0.1, fill = cbckgrd, colour ="black") +
       theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                          panel.grid.minor = element_blank(), axis.line = element_blank())
+    }
+    
+    strlegColor<-paste0("'",seq(1,8,1),"'='",col2hex(color),"'",collapse = ",")
+    strlegColor<-paste0("c(",strlegColor,")")
+    strlegpnch<-paste0("'",seq(1,8,1),"'=",pnch,collapse = ",")
+    strlegpnch<-paste0("c(",strlegpnch,")")
+    strlegSze<-paste0("'",seq(1,8,1),"'=",sze,collapse = ",")
+    strlegSze<-paste0("c(",strlegSze,")")
     
   }else{#plotly
     pnch<-sapply(residualPointStyle, function(x) as.character(pchPlotlyCross[pchPlotlyCross$pch==x,]$plotly))
@@ -127,6 +138,7 @@ diagnosticMaps<-function(mapColumn,mapdata,GeoLines,
     #wrap up text strings
     plotLocStr<-paste0(plotLocStr,")")
   
+  if (is.na(p)){
     #plotly plot
     p<-plot_ly() %>%
       layout(
@@ -141,24 +153,25 @@ diagnosticMaps<-function(mapColumn,mapdata,GeoLines,
              stroke = I("black"),color = I(cbckgrd),
              name = LineShapeGeo)
   }
+  }
   
   
   if ("threshold-above" %in% map.list){   
    # par(mfrow=c(1,1), pch=16)    # 1 plots on one page
     #subset data
-    above <- eval(parse(text=paste("mapdata[(mapdata$",mapColumn,"<",threshold,"),]",sep="")))  # over predictions (neg residuals)
-    nabove <- eval(parse(text=paste("length(above$",mapColumn,")",sep="")))
+    above <- eval(parse(text=paste0("mapdata[(mapdata$",mapColumn,"<",threshold,"),]")))  # over predictions (neg residuals)
+    nabove <- eval(parse(text=paste0("length(above$",mapColumn,")")))
 
     #for below threshold
     strTitle2<-paste(strTitle," - Over Predictions - n=",nabove)
     if (enable_plotlyMaps=="yes"){
-    p <- p %>% layout(title = strTitle2)  
+    #p <- p %>% layout(title = strTitle2)  
     } 
     
     
-    map1 <- eval(parse(text=paste("mapdata[(mapdata$",mapColumn,"<= cls[1]), ]",sep="")))
-    Lat<- map1$xlat
-    Lon<- map1$xlon
+    map1 <- eval(parse(text=paste0("mapdata[(mapdata$",mapColumn,"<= cls[1]), ]")))
+    Lat<- map1$lat
+    Lon<- map1$lon
     
  
     if (enable_plotlyMaps=="yes"){#plotly
@@ -171,24 +184,47 @@ diagnosticMaps<-function(mapColumn,mapdata,GeoLines,
       }else{
         markerList1<-paste0(markerList,"line = list(color = uniqueColsleaf(1)),color = uniqueColsleaf(1))")
       }
+      
+      if (!cls[1] %in% usedColors){
+        if (nrow(plotloc)==0){
+          p <- p %>% add_trace(x=0, y = 90, type = "scatter",
+                               mode = "markers",#color = I(color[1]),
+                               #marker = list(symbol = pnchPlotly[1],size = sze[1]),
+                               marker = eval(parse(text = markerList1)),
+                               name = paste0("< ",cls[1]),
+                               legendgroup=cls[1], showlegend=TRUE)
+        }
       p <- p %>% add_trace(data = plotloc, x=~Lon, y = ~Lat, type = "scatter",
                            mode = "markers",#color = I(color[1]),
                            #marker = list(symbol = pnchPlotly[1],size = sze[1]),
                            marker = eval(parse(text = markerList1)),
-                           name = paste("< ",cls[1],sep=""),
+                           name = paste0("< ",cls[1]),
                            hoverinfo = 'text',
-                           text = eval(parse(text = markerText)))
+                           text = eval(parse(text = markerText)),
+                           legendgroup=cls[1], showlegend=TRUE)
+      usedColors<-c(usedColors,cls[1])
+        
+      }else{
+        p <- p %>% add_trace(data = plotloc, x=~Lon, y = ~Lat, type = "scatter",
+                             mode = "markers",#color = I(color[1]),
+                             #marker = list(symbol = pnchPlotly[1],size = sze[1]),
+                             marker = eval(parse(text = markerList1)),
+                             name = paste0("< ",cls[1]),
+                             hoverinfo = 'text',
+                             text = eval(parse(text = markerText)),
+                             legendgroup=cls[1], showlegend=FALSE)
+      }
     }
     
     
-    strLegend<-paste("< ",cls[1],sep="")
+    strLegend<-paste0("< ",cls[1])
     
     for (k in 1:3) {
-      map1 <- eval(parse(text=paste("mapdata[(mapdata$",mapColumn," > cls[k] & mapdata$",mapColumn,"<= cls[k+1]), ]",sep="")))
-      Lat<- map1$xlat
-      Lon<- map1$xlon
+      map1 <- eval(parse(text=paste0("mapdata[(mapdata$",mapColumn," > cls[k] & mapdata$",mapColumn,"<= cls[k+1]), ]")))
+      Lat<- map1$lat
+      Lon<- map1$lon
 
-      strlegend<-paste(cls[k]," to ",cls[k+1],sep="")
+      strlegend<-paste0(cls[k]," to ",cls[k+1])
       strLegend<-c(strLegend,strlegend)
       
       if (enable_plotlyMaps=="yes"){#plotly
@@ -201,13 +237,34 @@ diagnosticMaps<-function(mapColumn,mapdata,GeoLines,
         }else{
           markerList1<-paste0(markerList,"line = list(color = uniqueColsleaf(k+1)),color = uniqueColsleaf(k+1))")
         }
+        if (!cls[k+1] %in% usedColors){
+          if (nrow(plotloc)==0){
+            p <- p %>% add_trace(x=0, y = 90, type = "scatter",
+                                 mode = "markers",#color = I(color[k+1]),
+                                 #marker = list(symbol = pnchPlotly[k+1],size = sze[k+1]),
+                                 marker = eval(parse(text = markerList1)),
+                                 name = strlegend,
+                                 legendgroup=cls[k+1], showlegend=TRUE)
+          }
         p <- p %>% add_trace(data = plotloc, x=~Lon, y = ~Lat, type = "scatter", 
                              mode = "markers",#color = I(color[k+1]),
                              #marker = list(symbol = pnchPlotly[k+1],size = sze[k+1]),
                              marker = eval(parse(text = markerList1)),
                              name = strlegend,
                              hoverinfo = 'text',
-                             text = eval(parse(text = markerText)))
+                             text = eval(parse(text = markerText)),
+                             legendgroup=cls[k+1], showlegend=TRUE)
+        usedColors<-c(usedColors,cls[k+1])
+        }else{
+          p <- p %>% add_trace(data = plotloc, x=~Lon, y = ~Lat, type = "scatter", 
+                               mode = "markers",#color = I(color[k+1]),
+                               #marker = list(symbol = pnchPlotly[k+1],size = sze[k+1]),
+                               marker = eval(parse(text = markerList1)),
+                               name = strlegend,
+                               hoverinfo = 'text',
+                               text = eval(parse(text = markerText)),
+                               legendgroup=cls[k+1], showlegend=FALSE) 
+        }
       }
       
       
@@ -223,44 +280,53 @@ diagnosticMaps<-function(mapColumn,mapdata,GeoLines,
       map1$cls<-makeAESvector(map1,values = seq(1,4,1), breaks = cls[1:4], include = "first")
       
       #make sf object
-      map1<-st_as_sf(map1,coords = c("xlon", "xlat"), crs = CRStext)
+      map1<-st_as_sf(map1,coords = c("lon", "lat"), crs = CRStext)
 
       p<-p +
         geom_sf(data = map1,
-                aes(colour = as.factor(cls), size = as.factor(cls), shape = as.factor(cls)), 
+                aes(colour = factor(cls, levels=seq(1,4,1)), 
+                    size = factor(cls, levels=seq(1,4,1)), 
+                    shape = factor(cls, levels=seq(1,4,1))), 
                 show.legend = TRUE) +
         coord_sf(xlim = lon_limit, ylim = lat_limit, crs = CRStext) +
-        scale_colour_manual(values = residualColors[1:4],
+        scale_colour_manual(values = eval(parse(text = strlegColor))[1:4],
                             labels = strLegend[1:4],
-                            name = "Over Predictions") +
-        scale_shape_manual(values = pnch[1:4],
+                            name = "Over Predictions",
+                            drop=FALSE) +
+        scale_shape_manual(values = eval(parse(text = strlegpnch))[1:4],
                            labels = strLegend,
-                           name = "Over Predictions") +
-        scale_size_manual(values = sze[1:4]*residualPointSize_factor,
+                           name = "Over Predictions",
+                           drop=FALSE) +
+        scale_size_manual(values = eval(parse(text = strlegSze))[1:4],
                           labels = strLegend[1:4],
-                          name = "Over Predictions") +
+                          name = "Over Predictions",
+                          drop=FALSE) +
         ggtitle(paste0(mapColumnName,"\n",strTitle2)) +
-        theme(plot.title = element_text(hjust = 0.5,size =residualTitleSize, face = 'bold'),
-              legend.position='bottom',
-              legend.justification = 'left',
-              legend.text = element_text(size = 24*residualLegendSize),
-              legend.title = element_text(size = 26*residualLegendSize,face ='bold'),
+        theme(axis.text.x = element_text(angle=90),
+              plot.title = element_text(hjust = 0.5,size =10*residualTitleSize, face = 'bold'),
+              legend.position=legendPos,
+              legend.justification = legendJus,
+              legend.text = element_text(size = 10*residualLegendSize),
+              legend.title = element_text(size = 10*residualLegendSize,face ='bold'),
               legend.background = element_rect(fill=residualMapBackground),
-              legend.key.size = unit(residualLegendSize, 'cm'),
+              legend.key.size = unit(residualLegendSize*0.8, 'cm'),
               legend.key = element_rect(fill = residualMapBackground)) +
-        guides(col = guide_legend(ncol=1), size = "legend", shape = "legend")
+        guides(col = guide_legend(ncol=1), size = "legend", shape = "legend") +
+        ggtitle(subTitle) + theme(plot.title = element_text(hjust = 0.5))
 
       
     }
-      return(p)
-    
+    p.list<-list(p=p,usedColors=usedColors)
+    return(p.list)
+   
   }else if ("threshold-below" %in% map.list){ 
-    below <- eval(parse(text=paste("mapdata[(mapdata$",mapColumn,">",threshold,"),]",sep="")))
-    nbelow <- eval(parse(text=paste("length(below$",mapColumn,")",sep="")))
+    below <- eval(parse(text=paste0("mapdata[(mapdata$",mapColumn,">",threshold,"),]")))
+    nbelow <- eval(parse(text=paste0("length(below$",mapColumn,")")))
 
     if (enable_plotlyMaps=="yes"){
 #plotly
  #plotly plot
+      if (is.na(p)){
       p<-plot_ly() %>%
         layout(
           showlegend =TRUE,
@@ -273,25 +339,26 @@ diagnosticMaps<-function(mapColumn,mapdata,GeoLines,
         add_sf(data = GeoLines,  mode = "lines", type = "scatter",
                stroke = I("black"),color = I(cbckgrd),
                name = LineShapeGeo)
+      }
     }   
 
     #for above threshold
     strTitle2<-paste(strTitle," - Under Predictions - n=",nbelow)
     if (enable_plotlyMaps=="yes"){
-      p <- p %>% layout(title = strTitle2)  
+     # p <- p %>% layout(title = strTitle2)  
     }
  
     strLegend<-vector('character')
 
     for (k in 4:7) {
-      map1 <- eval(parse(text=paste("mapdata[(mapdata$",mapColumn," > cls[k] & mapdata$",mapColumn," <= cls[k+1]), ]",sep="")))
-      Lat<- map1$xlat
-      Lon<- map1$xlon
+      map1 <- eval(parse(text=paste0("mapdata[(mapdata$",mapColumn," > cls[k] & mapdata$",mapColumn," <= cls[k+1]), ]")))
+      Lat<- map1$lat
+      Lon<- map1$lon
 
       if (k!=7){
-        strlegend<-paste(cls[k]," to ",cls[k+1],sep="")
+        strlegend<-paste0(cls[k]," to ",cls[k+1])
       }else{
-        strlegend<-paste("> ",cls[k],sep="")
+        strlegend<-paste0("> ",cls[k])
       }
       strLegend<-c(strLegend,strlegend)
       
@@ -305,13 +372,34 @@ diagnosticMaps<-function(mapColumn,mapdata,GeoLines,
         }else{
           markerList1<-paste0(markerList,"line = list(color = uniqueColsleaf(k+1)),color = uniqueColsleaf(k+1))")
         }
+        if (!cls[k+1] %in% usedColors){
+          if (nrow(plotloc)==0){
+            p <- p %>% add_trace(x=0, y = 90, type = "scatter",
+                                 mode = "markers",#color = I(color[k+1]),
+                                 #marker = list(symbol = pnchPlotly[k+1],size = sze[k+1]),
+                                 marker = eval(parse(text = markerList1)),
+                                 name = strlegend,
+                                 legendgroup=cls[k+1], showlegend=TRUE)
+          }
         p <- p %>% add_trace(data = plotloc, x=~Lon, y = ~Lat, type = "scatter", 
                              mode = "markers",#color = I(color[k+1]),
                              #marker = list(symbol = pnchPlotly[k+1],size = sze[k+1]),
                              marker = eval(parse(text = markerList1)),
                              name = strlegend,
                              hoverinfo = 'text',
-                             text = eval(parse(text = markerText)))
+                             text = eval(parse(text = markerText)),
+                             legendgroup=cls[k+1], showlegend=TRUE)
+        usedColors<-c(usedColors,cls[k+1])
+        }else{
+          p <- p %>% add_trace(data = plotloc, x=~Lon, y = ~Lat, type = "scatter", 
+                               mode = "markers",#color = I(color[k+1]),
+                               #marker = list(symbol = pnchPlotly[k+1],size = sze[k+1]),
+                               marker = eval(parse(text = markerList1)),
+                               name = strlegend,
+                               hoverinfo = 'text',
+                               text = eval(parse(text = markerText)),
+                               legendgroup=cls[k+1], showlegend=FALSE)
+        }
       }
       
       
@@ -319,9 +407,9 @@ diagnosticMaps<-function(mapColumn,mapdata,GeoLines,
     }
     
 
-    map1 <- eval(parse(text=paste("mapdata[(mapdata$",mapColumn," > cls[7]), ]",sep="")))
-    Lat<- map1$xlat
-    Lon<- map1$xlon
+    map1 <- eval(parse(text=paste0("mapdata[(mapdata$",mapColumn," > cls[7]), ]")))
+    Lat<- map1$lat
+    Lon<- map1$lon
 
     if (enable_plotlyMaps=="yes"){
 #plotly
@@ -334,13 +422,34 @@ diagnosticMaps<-function(mapColumn,mapdata,GeoLines,
       }else{
         markerList1<-paste0(markerList,"line = list(color = uniqueColsleaf(8)),color = uniqueColsleaf(8))")
       }
+      if (!cls[8] %in% usedColors){
+        if (nrow(plotloc)==0){
+          p <- p %>% add_trace(x=0, y = 90, type = "scatter",
+                               mode = "markers",#color = I(color[8]),
+                               #marker = list(symbol = pnchPlotly[8],size = sze[8]),
+                               marker = eval(parse(text = markerList1)),
+                               name = paste0("> ",cls[7]),
+                               legendgroup=cls[8], showlegend=TRUE)
+        }
       p <- p %>% add_trace(data = plotloc, x=~Lon, y = ~Lat, type = "scatter",
                            mode = "markers",#color = I(color[8]),
                            #marker = list(symbol = pnchPlotly[8],size = sze[8]),
                            marker = eval(parse(text = markerList1)),
-                           name = paste("> ",cls[7],sep=""),
+                           name = paste0("> ",cls[7]),
                            hoverinfo = 'text',
-                           text = eval(parse(text = markerText)))
+                           text = eval(parse(text = markerText)),
+                           legendgroup=cls[8], showlegend=TRUE)
+      usedColors<-c(usedColors,cls[8])
+      }else{
+        p <- p %>% add_trace(data = plotloc, x=~Lon, y = ~Lat, type = "scatter",
+                             mode = "markers",#color = I(color[8]),
+                             #marker = list(symbol = pnchPlotly[8],size = sze[8]),
+                             marker = eval(parse(text = markerList1)),
+                             name = paste0("> ",cls[7]),
+                             hoverinfo = 'text',
+                             text = eval(parse(text = markerText)),
+                             legendgroup=cls[8], showlegend=FALSE) 
+      }
     }
 
     if (enable_plotlyMaps=="no"){
@@ -350,36 +459,44 @@ diagnosticMaps<-function(mapColumn,mapdata,GeoLines,
       #create vector of classes for legend
       map1$cls<-makeAESvector(map1,values = seq(4,8,1), breaks = cls[4:8], include = "last")
 
-      map1<-st_as_sf(map1,coords = c("xlon", "xlat"), crs = CRStext)
+      map1<-st_as_sf(map1,coords = c("lon", "lat"), crs = CRStext)
 
       p<-p +
         geom_sf(data = map1,
-                aes(colour = as.factor(cls), size = as.factor(cls), shape = as.factor(cls)), 
+                aes(colour = factor(cls, levels=seq(5,8,1)), 
+                    size = factor(cls, levels=seq(5,8,1)), 
+                    shape = factor(cls, levels=seq(5,8,1))), 
                 show.legend = TRUE) +
         coord_sf(xlim = lon_limit, ylim = lat_limit, crs = CRStext) +
-        scale_colour_manual(values = residualColors[5:8],
+        scale_colour_manual(values = eval(parse(text = strlegColor))[5:8],
                             labels = strLegend[1:4],
-                            name = "Under Predictions") +
-        scale_shape_manual(values = pnch[5:8],
+                            name = "Under Predictions",
+                            drop=FALSE) +
+        scale_shape_manual(values = eval(parse(text = strlegpnch))[5:8],
                            labels = strLegend[1:4],
-                           name = "Under Predictions") +
-        scale_size_manual(values = sze[5:8]*residualPointSize_factor,
+                           name = "Under Predictions",
+                           drop=FALSE) +
+        scale_size_manual(values = eval(parse(text = strlegSze))[5:8],
                           labels = strLegend[1:4],
-                          name = "Under Predictions") +
+                          name = "Under Predictions",
+                          drop=FALSE) +
         ggtitle(paste0(mapColumnName,"\n",strTitle2)) +
-        theme(plot.title = element_text(hjust = 0.5,size =residualTitleSize, face = 'bold'),
-              legend.position='bottom',
-              legend.justification = 'left',
-              legend.text = element_text(size = 24*residualLegendSize),
-              legend.title = element_text(size = 26*residualLegendSize,face ='bold'),
+        theme(axis.text.x = element_text(angle=90),
+              plot.title = element_text(hjust = 0.5,size =10*residualTitleSize, face = 'bold'),
+              legend.position=legendPos,
+              legend.justification = legendJus,
+              legend.text = element_text(size = 10*residualLegendSize),
+              legend.title = element_text(size = 10*residualLegendSize,face ='bold'),
               legend.background = element_rect(fill=residualMapBackground),
-              legend.key.size = unit(residualLegendSize, 'cm'),
+              legend.key.size = unit(residualLegendSize*0.8, 'cm'),
               legend.key = element_rect(fill = residualMapBackground)) +
-        guides(col = guide_legend(ncol=1), size = "legend", shape = "legend")
+        guides(col = guide_legend(ncol=1), size = "legend", shape = "legend") +
+        ggtitle(subTitle) + theme(plot.title = element_text(hjust = 0.5))
       
       
     }
-      return(p)
+    p.list<-list(p=p,usedColors=usedColors)
+    return(p.list)
     
 
   }#end if threshold map    
@@ -391,6 +508,7 @@ diagnosticMaps<-function(mapColumn,mapdata,GeoLines,
 #plotly
 
       #plotly plot
+      if (is.na(p)){
       p<-plot_ly() %>%
         layout(
           showlegend =TRUE,
@@ -403,20 +521,21 @@ diagnosticMaps<-function(mapColumn,mapdata,GeoLines,
         add_sf(data = GeoLines,  mode = "lines", type = "scatter",
                stroke = I("black"),color = I(cbckgrd),
                name = LineShapeGeo)
+      }
     }   
     
 
     strTitle2<-strTitle
     if (enable_plotlyMaps=="yes"){
-      p <- p %>% layout(title = strTitle2)  
+     # p <- p %>% layout(title = strTitle2)  
     }
     
     
-    map1 <- eval(parse(text=paste("mapdata[(mapdata$",mapColumn," <= cls[1]), ]",sep="")))
-    Lat<- map1$xlat
-    Lon<- map1$xlon
+    map1 <- eval(parse(text=paste0("mapdata[(mapdata$",mapColumn," <= cls[1]), ]")))
+    Lat<- map1$lat
+    Lon<- map1$lon
 
-    strLegend<-paste("< ",cls[1],sep="")
+    strLegend<-paste0("< ",cls[1])
     
     if (enable_plotlyMaps=="yes"){#plotly
       eval(parse(text = plotLocStr))
@@ -427,24 +546,42 @@ diagnosticMaps<-function(mapColumn,mapdata,GeoLines,
       }else{
         markerList1<-paste0(markerList,"line = list(color = uniqueColsleaf(1)),color = uniqueColsleaf(1))")
       }
-      
+      if (!cls[1] %in% usedColors){
+        if (nrow(plotloc)==0){
+          p <- p %>% add_trace(x=0, y = 90, type = "scatter",
+                               mode = "markers",
+                               marker = eval(parse(text = markerList1)),
+                               name = strLegend,
+                               legendgroup=cls[1], showlegend=TRUE)
+        }
       p <- p %>% add_trace(data = plotloc, x=~Lon, y = ~Lat, type = "scatter", 
                            mode = "markers",
                            marker = eval(parse(text = markerList1)),
                            name = strLegend,
                            hoverinfo = 'text',
-                           text = eval(parse(text = markerText)))
+                           text = eval(parse(text = markerText)),
+                           legendgroup=cls[1], showlegend=TRUE)
+      usedColors<-c(usedColors,cls[1])
+      }else{
+        p <- p %>% add_trace(data = plotloc, x=~Lon, y = ~Lat, type = "scatter", 
+                             mode = "markers",
+                             marker = eval(parse(text = markerList1)),
+                             name = strLegend,
+                             hoverinfo = 'text',
+                             text = eval(parse(text = markerText)),
+                             legendgroup=cls[1], showlegend=FALSE)
+      }
     }
     
     for (k in 1:7) {
-      map1 <- eval(parse(text=paste("mapdata[(mapdata$",mapColumn," > cls[k] & mapdata$",mapColumn," <= cls[k+1]), ]",sep="")))
-      Lat<- map1$xlat
-      Lon<- map1$xlon
+      map1 <- eval(parse(text=paste0("mapdata[(mapdata$",mapColumn," > cls[k] & mapdata$",mapColumn," <= cls[k+1]), ]")))
+      Lat<- map1$lat
+      Lon<- map1$lon
 
       if (k!=7){
-        strlegend<-paste(cls[k]," to ",cls[k+1],sep="")
+        strlegend<-paste0(cls[k]," to ",cls[k+1])
       }else{
-        strlegend<-paste("> ",cls[k],sep="")
+        strlegend<-paste0("> ",cls[k])
       }
       strLegend<-c(strLegend,strlegend)
     
@@ -459,18 +596,36 @@ diagnosticMaps<-function(mapColumn,mapdata,GeoLines,
       }else{
         markerList1<-paste0(markerList,"line = list(color = uniqueColsleaf(k+1)),color = uniqueColsleaf(k+1))")
       }
+      if (!cls[k+1] %in% usedColors){
+        if (nrow(plotloc)==0){
+          p <- p %>% add_trace(x=0, y = 90, type = "scatter",
+                               mode = "markers",
+                               marker = eval(parse(text = markerList1)),
+                               name = strlegend,
+                               legendgroup=cls[k+1], showlegend=TRUE)
+        }
       p <- p %>% add_trace(data = plotloc, x=~Lon, y = ~Lat, type = "scatter", 
                            mode = "markers",
                            marker = eval(parse(text = markerList1)),
                            name = strlegend,
                            hoverinfo = 'text',
-                           text = eval(parse(text = markerText)))
+                           text = eval(parse(text = markerText)),
+                           legendgroup=cls[k+1], showlegend=TRUE)
+      usedColors<-c(usedColors,cls[k+1])
+      }else{
+        p <- p %>% add_trace(data = plotloc, x=~Lon, y = ~Lat, type = "scatter", 
+                             mode = "markers",
+                             marker = eval(parse(text = markerList1)),
+                             name = strlegend,
+                             hoverinfo = 'text',
+                             text = eval(parse(text = markerText)),
+                             legendgroup=cls[k+1], showlegend=FALSE)
+      }
     }
     }
-    map1 <- eval(parse(text=paste("mapdata[(mapdata$",mapColumn," > cls[7]), ]",sep="")))
-    Lat<- map1$xlat
-    Lon<- map1$xlon
-
+    map1 <- eval(parse(text=paste0("mapdata[(mapdata$",mapColumn," > cls[7]), ]")))
+    Lat<- map1$lat
+    Lon<- map1$lon
     if (enable_plotlyMaps=="no"){
 
       mapdata$mapColumn<-eval(parse(text = paste0("mapdata$",mapColumn)))
@@ -478,40 +633,44 @@ diagnosticMaps<-function(mapColumn,mapdata,GeoLines,
       
       #create vector of classes for legend
       map1$cls<-makeAESvector(map1,values = seq(1,8,1), breaks = cls, include = "all")
+      #map1$cls<-factor(map1$cls,levels=seq(1,8,1))
+      map1<-st_as_sf(map1,coords = c("lon", "lat"), crs = CRStext)
 
-      map1<-st_as_sf(map1,coords = c("xlon", "xlat"), crs = CRStext)
-      # save(list = c("mapdata","CRStext","residualColors","strLegend",
-      #               "strTitle2","mapColumnName","residualTitleSize","residualLegendSize",
-      #               "residualMapBackground","pnch","sze",
-      #               "residualPointSize_factor","GeoLines","mapColumn","cls"),file = "D:/mapdata")
       p<-p +
         geom_sf(data = map1,
-                aes(colour = as.factor(cls), size = as.factor(cls), shape = as.factor(cls)), 
+                aes(colour = factor(cls, levels=seq(1,8,1)), 
+                    size = factor(cls, levels=seq(1,8,1)), 
+                    shape = factor(cls, levels=seq(1,8,1))), 
                 show.legend = TRUE) +
         coord_sf(xlim = lon_limit, ylim = lat_limit, crs = CRStext) +
-        scale_colour_manual(values = residualColors[1:8],
+        scale_colour_manual(values = eval(parse(text = strlegColor)),
                             labels = strLegend[1:8],
-                            name = "Over Predictions") +
-        scale_shape_manual(values = pnch[1:8],
+                            name = "Over/Under Predictions",
+                            drop=FALSE) +
+        scale_shape_manual(values = eval(parse(text = strlegpnch)),
                            labels = strLegend,
-                           name = "Over Predictions") +
-        scale_size_manual(values = sze[1:8]*residualPointSize_factor,
+                           name = "Over/Under Predictions",
+                           drop=FALSE) +
+        scale_size_manual(values = eval(parse(text = strlegSze)),
                           labels = strLegend[1:8],
-                          name = "Over Predictions") +
+                          name = "Over/Under Predictions",
+                          drop=FALSE) +
         ggtitle(paste0(mapColumnName,"\n",strTitle2)) +
-        theme(plot.title = element_text(hjust = 0.5,size =residualTitleSize, face = 'bold'),
-              legend.position='bottom',
-              legend.justification = 'left',
-              legend.text = element_text(size = 24*residualLegendSize),
-              legend.title = element_blank(),
+        theme(axis.text.x = element_text(angle=90),
+          plot.title = element_text(hjust = 0.5,size =10*residualTitleSize, face = 'bold'),
+               legend.position=legendPos,
+               legend.justification = legendJus,
+               legend.text = element_text(size = 10*residualLegendSize),
+               legend.title = element_text(size = 10*residualLegendSize,face ='bold'),
               legend.background = element_rect(fill=residualMapBackground),
-              legend.key.size = unit(residualLegendSize, 'cm'),
+               legend.key.size = unit(residualLegendSize*0.8, 'cm'),
               legend.key = element_rect(fill = residualMapBackground)) +
-        guides(col = guide_legend(ncol=1), size = "legend", shape = "legend")
+        guides(col = guide_legend(ncol=1), size = "legend", shape = "legend") +
+        ggtitle(subTitle) + theme(plot.title = element_text(hjust = 0.5))
       
-
     }
-      return(p)
+      p.list<-list(p=p,usedColors=usedColors)
+    return(p.list)
     
     
     

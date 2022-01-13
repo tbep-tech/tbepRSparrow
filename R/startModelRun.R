@@ -133,7 +133,7 @@ startModelRun<-function(file.output.list,
   # (B) Setup the parameter and system variables
   SelParmValues <- selectParmValues(betavalues,if_estimate,if_estimate_simulation,batch_mode)
   assign("SelParmValues",SelParmValues,envir = .GlobalEnv)
-  #print("SELECTED PARAMETER VALUES")
+
   #SelParmValues 
   
   # deactivates unnecessary computation of parameter correlations, Eigenvalues in cases of one predictor variable
@@ -167,8 +167,8 @@ startModelRun<-function(file.output.list,
     
     if (class(tryIt)=="try-error"){#if an error occured
       cat("\n \n")
-      message(paste("AN ERROR OCCURRED IN PROCESSING _userModifyData.R\n",
-                    geterrmessage(),"RUN EXECUTION TERMINATED.",sep=""))
+      message(paste0("AN ERROR OCCURRED IN PROCESSING _userModifyData.R\n",
+                    geterrmessage(),"RUN EXECUTION TERMINATED."))
       if (batch_mode=="yes"){#if batch output message to log
         cat(" \nAN ERROR OCCURRED IN PROCESSING _userModifyData.R\n",
             geterrmessage(),"RUN EXECUTION TERMINATED.",sep="")
@@ -195,6 +195,15 @@ startModelRun<-function(file.output.list,
   }
   assign("subdata",subdata,envir = .GlobalEnv)
   
+  dynamic<-checkDynamic(subdata)
+  if(dynamic){
+    if ("year" %in% names(subdata)){
+     add_vars<-as.character(unique(c(add_vars,"year"))) 
+    }
+    if ("season" %in% names(subdata)){
+      add_vars<-as.character(unique(c(add_vars,"season"))) 
+    }
+  }
   
   message("Testing for missing variables in subdata...")
   checkClassificationVars(subdata,class.input.list,batch_mode)
@@ -257,21 +266,21 @@ startModelRun<-function(file.output.list,
     assign("Vsites.list",Vsites.list,envir = .GlobalEnv)
     
   }
-  print(paste("Initial monitoring site count: ",numsites1,sep=""))
+  print(paste0("Initial monitoring site count: ",numsites1))
   
-  print(paste("Monitoring sites after filtering for small headwater sites: ",numsites2,sep=""))
+  print(paste0("Monitoring sites after filtering for small headwater sites: ",numsites2))
   
-  print(paste("Monitoring sites after filtering for minimum number of reaches separating sites: ",numsites3,sep=""))
+  print(paste0("Monitoring sites after filtering for minimum number of reaches separating sites: ",numsites3))
   
-  print(paste("Monitoring sites after filtering for minimum incremental area between sites: ",numsites4,sep=""))
+  print(paste0("Monitoring sites after filtering for minimum incremental area between sites: ",numsites4))
   
-  print(paste("Number of calibration sites identified by the CALSITES variable: ",nMoncalsites,sep=""))
+  print(paste0("Number of calibration sites identified by the CALSITES variable: ",nMoncalsites))
   
-  print(paste("Number of selected calibration sites with non-zero observed loads: ",nMon,sep=""))
+  print(paste0("Number of selected calibration sites with non-zero observed loads: ",nMon))
   
-  print(paste("Number of selected validation sites with non-zero observed loads: ",vic,sep=""))
+  print(paste0("Number of selected validation sites with non-zero observed loads: ",vic))
   
-  save(subdata,file=paste(path_results,.Platform$file.sep,"data",.Platform$file.sep,"subdata",sep=""))
+  save(subdata,file=paste0(path_results,.Platform$file.sep,"data",.Platform$file.sep,"subdata"))
   
   ###############################################################
   # 6. Missing data checks and data setup for estimation 
@@ -292,7 +301,7 @@ startModelRun<-function(file.output.list,
   sitedata <- subdata[(subdata$depvar > 0 & subdata$calsites==1), ]  # create site attribute object
   assign("sitedata",sitedata,envir = .GlobalEnv)
   numsites <- length(sitedata$waterid)
-  save(sitedata,file=paste(path_results,.Platform$file.sep,"data",.Platform$file.sep,"sitedata",sep=""))
+  save(sitedata,file=paste0(path_results,.Platform$file.sep,"data",.Platform$file.sep,"sitedata"))
   assign("numsites",numsites,envir = .GlobalEnv)
   
   
@@ -312,7 +321,7 @@ startModelRun<-function(file.output.list,
     assign("vsitedata",vsitedata,envir = .GlobalEnv)
     vnumsites <- length(vsitedata$waterid)
     vnumsites 
-    save(vsitedata,file=paste(path_results,.Platform$file.sep,"data",.Platform$file.sep,"vsitedata",sep=""))
+    save(vsitedata,file=paste0(path_results,.Platform$file.sep,"data",.Platform$file.sep,"vsitedata"))
   }
   
   # (D) Setup land use for incremental basins for diagnostics 
@@ -375,7 +384,7 @@ startModelRun<-function(file.output.list,
       message("Running correlations among explanatory variables...")
       Cor.ExplanVars.list <- correlationMatrix(file.output.list,SelParmValues,subdata)
       
-      objfile <- paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_Cor.ExplanVars.list",sep="")
+      objfile <- paste0(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_Cor.ExplanVars.list")
       save(Cor.ExplanVars.list,file=objfile)
     }
   }
@@ -463,15 +472,14 @@ startModelRun<-function(file.output.list,
   #popup results
   try({
     if (if_estimate=="yes" | if_estimate_simulation=="yes"){
-      #shell.exec(paste(path_results,"estimate",.Platform$file.sep,run_id,"_diagnostic_plots.pdf",sep=""))
-      shell.exec(paste(path_results,"estimate",.Platform$file.sep,run_id,"_diagnostic_plots.html",sep=""))
-      shell.exec(paste(path_results,"estimate",.Platform$file.sep,run_id,"_summary.txt",sep=""))
+      shell.exec(paste0(path_results,"estimate",.Platform$file.sep,run_id,"_diagnostic_plots.html"))
+      shell.exec(paste0(path_results,"estimate",.Platform$file.sep,run_id,"_summary.txt"))
     }
   },silent=TRUE)
   
   
   # obtain uncertainties, if available
-  objfile <- paste(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_BootUncertainties",sep="")
+  objfile <- paste0(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_BootUncertainties")
   if(file.exists(objfile) == TRUE) {
     load(objfile)
     map_uncertainties <- c("se_pload_total","ci_pload_total")
@@ -509,8 +517,7 @@ startModelRun<-function(file.output.list,
     runBatchShiny(path_results,path_shinyBrowser)
   }#end interactive maps
   
-  # }#if runScript=yes
-  #}#if exists(runScript)
+
   
   
   

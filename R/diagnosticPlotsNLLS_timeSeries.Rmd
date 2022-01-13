@@ -1,0 +1,97 @@
+---
+title: "`r params$rmdTitle`"
+author: ""
+date: "`r paste0('Output on ',format(Sys.time(), '%m-%d-%Y'))`"
+output: html_document
+params:
+  rmdTitle: rmdTitle
+  diagnostic_params: diagnostic_params
+  path_diagnosticPlotsNLLS_timeSeriesChild: path_diagnosticPlotsNLLS_timeSeriesChild
+  
+---
+
+
+
+```{r outputMaps, eval=TRUE, echo=FALSE,warning=FALSE, message = FALSE,fig.width=8, fig.height=8}
+#unpack params
+path_diagnosticPlotsNLLS_timeSeriesChild<-params$path_diagnosticPlotsNLLS_timeSeriesChild
+diagnostic_params<-params$diagnostic_params
+
+
+unPackList(lists = list(diagnostic_params = diagnostic_params),
+           parentObj = list(NA))
+
+
+pnch<-as.character(pchPlotlyCross[pchPlotlyCross$pch==diagnosticPlotPointStyle,]$plotly)
+markerSize<-diagnosticPlotPointSize*10
+markerCols<-colorNumeric(c("black","white"), 1:2)
+markerList = paste0("list(symbol = pnch,
+                       size = ",markerSize,",")
+if (regexpr("open",pnch)>0){
+  markerList<-paste0(markerList,"color = markerCols(1))")
+}else{
+  markerList<-paste0(markerList,"line = list(color = markerCols(1), width = 0.8),color = markerCols(1))")
+}
+
+
+
+```
+
+
+
+```{r, eval=TRUE, echo=FALSE,warning=FALSE, message = FALSE, out.width="750px", out.height="750px"} 
+  dynamic<-checkDynamic(sitedata) 
+  
+  if (diagnostic_timeSeriesPlots=="yes" & dynamic){
+    timeSeriesdat<-data.frame(mapping_waterid = sitedata$mapping_waterid,staid=sitedata$staid,Obs=estimate.list$Mdiagnostics.list$Obs,predict=estimate.list$Mdiagnostics.list$predict)
+
+
+      
+    if ("year" %in% names(sitedata)){
+      if(!any(is.na(sitedata$year))){
+        timeSeriesdat$year<-sitedata$year
+      }
+    }
+    if ("season" %in% names(sitedata)){
+      if(!any(is.na(sitedata$season))){
+        timeSeriesdat$season<-sitedata$season
+      }
+    }
+    if("year" %in% names(timeSeriesdat) & "season" %in% names(timeSeriesdat)){
+      timeSeriesdat <- timeSeriesdat %>% 
+      arrange(factor(season, levels = c("winter","spring","summer","fall")))
+timeSeriesdat<-timeSeriesdat[order(timeSeriesdat$year),]
+      
+      timeSeriesdat$timeStep<-paste(timeSeriesdat$year,timeSeriesdat$season)
+      
+    }else if ("year" %in% names(timeSeriesdat)){
+      timeSeriesdat<-timeSeriesdat[order(timeSeriesdat$year),]
+      timeSeriesdat$timeStep<-"year"
+    }else{
+            timeSeriesdat <- timeSeriesdat %>% 
+        arrange(factor(season, levels = c("winter","spring","summer","fall")))
+            
+      timeSeriesdat$timeStep<-"season"
+    }
+  }
+  
+            
+  rmd <- sapply(
+    1:(length(unique(timeSeriesdat$mapping_waterid))),
+    function(i) {
+      knitr::knit_expand(path_diagnosticPlotsNLLS_timeSeriesChild, i = i)
+    }
+  )
+  rmd <- paste(rmd, collapse = "\n")
+
+```
+
+```{r renderOut, echo=FALSE, results='asis', warning=FALSE, message=FALSE}
+
+rendered <- knitr::knit(text = rmd, quiet = TRUE)
+cat("\n \n")
+cat(rendered, sep = "\n")
+
+
+```
+

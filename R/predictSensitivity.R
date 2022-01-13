@@ -127,8 +127,8 @@ predictSensitivity <- function(AEstimate,estimate.list,DataMatrix.list,SelParmVa
   
   for (j in 1:length(jsrcvar)) {  
     ddliv <- as.matrix((ddliv2[,j] * data[,jsrcvar[j]]) * beta1[,jbsrcvar[j]] ) 
-    assign(paste("pload_inc_",Parmnames[j],sep=""),as.vector(ddliv))   # create variable 'pload_inc_(source name)'
-    srclist_inc[j] <- paste("pload_inc_",Parmnames[j],sep="")
+    assign(paste0("pload_inc_",Parmnames[j]),as.vector(ddliv))   # create variable 'pload_inc_(source name)'
+    srclist_inc[j] <- paste0("pload_inc_",Parmnames[j])
   }
   
   ####################################################

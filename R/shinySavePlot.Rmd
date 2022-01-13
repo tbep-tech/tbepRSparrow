@@ -1,8 +1,9 @@
 ---
-title: 'interactive_2020.06.04'
+title: "`r params$run_id`"
 output: html_document
 params:
   p: p
+  run_id: run_id
 ---
 
 ```{r setup, include=FALSE}

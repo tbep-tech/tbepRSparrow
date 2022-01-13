@@ -90,7 +90,7 @@ dataInputPrep<-function(#for readData
   fileList<-fileList[which(fileList %in% ls())]
   fileName<-strsplit(path_results,.Platform$file.sep)[[1]]
   fileName<-paste(fileName[1:length(fileName)-1],collapse = .Platform$file.sep)
-  fileName<-paste(fileName,.Platform$file.sep,gsub(".csv","",input_data_fileName),"_priorImport",sep="")
+  fileName<-paste0(fileName,.Platform$file.sep,gsub(".csv","",input_data_fileName),"_priorImport")
   save(list=fileList, file=fileName)
   
   

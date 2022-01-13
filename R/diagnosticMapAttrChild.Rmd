@@ -2,7 +2,7 @@
 ```{r ,eval = TRUE, echo = FALSE, out.width="750px", out.height="750px", warning = FALSE, message = FALSE}
 s<-{{s}}
 
-siteAttr<-eval(parse(text= paste("data.frame(",map_siteAttributes.list[s],"=sitedata$",map_siteAttributes.list[s],")",sep="")))
+siteAttr<-eval(parse(text= paste0("data.frame(",map_siteAttributes.list[s],"=sitedata$",map_siteAttributes.list[s],")")))
 titleAttr<-data_names[which(data_names$sparrowNames==map_siteAttributes.list[s]),]
 unitAttr<-titleAttr$varunits
 titleAttr<-as.character(titleAttr$explanation)
@@ -13,10 +13,18 @@ input<-list(var=NA, sizeBatch=NA,size=NA)
 ### `r titleAttr`
 ```{r chunkCont{{s}},eval = TRUE, echo = FALSE,fig.width=8, fig.height=8, warning = FALSE, message = FALSE}
 
-mapSiteAttributes(#Rshiny
-  input,"", path_gis, sitedata, LineShapeGeo,data_names,FALSE,
-  #regular
-  names(siteAttr),mapdata,GeoLines,mapping.input.list,titleAttr,unitAttr,batch_mode)
+# mapSiteAttributes(#Rshiny
+#   input,"", path_gis, sitedata, LineShapeGeo,data_names,FALSE,
+#   #regular
+#   names(siteAttr),mapdata,GeoLines,mapping.input.list,titleAttr,unitAttr,batch_mode)
+        p.list<-mapSiteAttributes(#Rshiny
+          input,"", path_gis, sitedata, LineShapeGeo,data_names,Rshiny=FALSE,
+          #regular
+          mapColumn=names(siteAttr),mapdata=mapdata,GeoLines,mapping.input.list,
+          strTitle=titleAttr,unitAttr,add_plotlyVars = mapping.input.list$add_plotlyVars,
+          legendPos='right',legendJus="top",subTitle=NA,p=NA,plotPageData=NA,usedColors=NA,
+          batch_mode)
+p.list$p
 
 ```
 

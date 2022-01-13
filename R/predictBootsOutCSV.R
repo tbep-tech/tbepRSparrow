@@ -103,7 +103,7 @@ predictBootsOutCSV <- function(file.output.list,estimate.list,predictBoots.list,
   
   outvars2 <- outvars2[with(outvars2,order(outvars2$hydseq,outvars2$waterid)), ]
   
-  fileout <- paste(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predicts_load_boots.csv",sep="")
+  fileout <- paste0(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predicts_load_boots.csv")
   fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
          dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
   
@@ -129,7 +129,7 @@ predictBootsOutCSV <- function(file.output.list,estimate.list,predictBoots.list,
   }# if add_vars
   outvars2 <- outvars2[with(outvars2,order(outvars2$hydseq,outvars2$waterid)), ]
   
-  fileout <- paste(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predicts_yield_boots.csv",sep="")
+  fileout <- paste0(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predicts_yield_boots.csv")
   fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
          dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
   

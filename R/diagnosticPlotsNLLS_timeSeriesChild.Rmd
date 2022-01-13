@@ -1,0 +1,73 @@
+```{r chunktimeSeries{{i}},eval = TRUE, echo = FALSE, out.width="750px", out.height="750px", warning = FALSE, message = FALSE}
+i<-{{i}}
+df<-timeSeriesdat[timeSeriesdat$mapping_waterid==timeSeriesdat$mapping_waterid[i],]
+
+
+
+markerText<-"~paste('</br> timeStep: ',timeStep,
+            '</br> Obs :',round(Obs,siteAttrClassRounding),
+      '</br> Predict :',round(predict,siteAttrClassRounding)"
+      
+if ("year" %in% names(df) & "season" %in% names(df)){
+  sitedata2<-merge(sitedata,df[c("mapping_waterid","year","season")],by=c("mapping_waterid","year","season"))
+}else if ("year" %in% names(df)){
+  sitedata2<-merge(sitedata,df[c("mapping_waterid","year")],by=c("mapping_waterid","year"))
+}else{
+  sitedata2<-merge(sitedata,df[c("mapping_waterid","season")],by=c("mapping_waterid","season"))
+}
+
+
+markerText<-addMarkerText(markerText,add_plotlyVars,df, sitedata2)$markerText
+
+
+df<-addMarkerText(markerText,add_plotlyVars, df,sitedata2)$mapData
+
+if ("year" %in% names(df) & "season" %in% names(df)){
+  df <- df %>% 
+    arrange(factor(season, levels = c("winter","spring","summer","fall")))
+  df<-df[order(df$year),]
+}else if ("year" %in% names(df)){
+  df<-df[order(df$year),]
+}else{
+  df <- df %>% 
+    arrange(factor(season, levels = c("winter","spring","summer","fall")))
+}
+
+
+df$timeStep<-factor(df$timeStep,levels=df$timeStep)
+
+p1 <- plot_ly() %>%
+  layout(
+    xaxis = list(dtick=1,
+      showticklabels= TRUE,
+      title = "TimeStep"),
+    yaxis = list(
+      showticklabels = TRUE,
+      title = paste0("OBSERVED/PREDICTED LOAD (",loadUnits,")")),
+    title = timeSeriesdat$mapping_waterid[i])
+
+p1 <- p1 %>% add_trace(data = df, x = ~timeStep, y = ~Obs,
+                       type = "scatter",
+                       mode = "markers",
+                       marker = eval(parse(text = markerList)),
+                       hoverinfo = 'text',
+                       text = eval(parse(text = markerText)),
+                       showlegend=FALSE)
+p1 <- p1 %>% add_lines(data = df, x = ~timeStep, y = ~Obs,showlegend=TRUE,name="Observed")
+
+
+p1 <- p1 %>% add_trace(data = df, x = ~timeStep, y = ~predict,
+                       type = "scatter",
+                       mode = "markers",
+                       marker = eval(parse(text = markerList)),
+                       hoverinfo = 'text',
+                       text = eval(parse(text = markerText)),
+                       showlegend=FALSE)
+p1 <- p1 %>% add_lines(data = df, x = ~timeStep, y = ~predict,showlegend=TRUE,name="Predicted")
+
+p1
+```
+
+```{r cpntPgBr{{i}}, results='asis', echo=FALSE}
+cat("<P style='page-break-before: always'>") 
+```

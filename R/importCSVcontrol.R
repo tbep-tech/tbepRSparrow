@@ -42,8 +42,8 @@ importCSVcontrol<-function(filein,Ctype,NAMES,strEndMessage,
       Ctype<-c(Ctype,rep("NULL",numberFields))
       numberFieldsOut<-list(Ctype=Ctype,numberFields=numberFields)
     }else if (numberFields<0){#not enough columns invalid file
-      message(paste("ERROR: INVALID ",fileName," FILE '",filein,"' CHECK NUMBER OF COLUMNS\n", 
-                    fileName," FILE SHOULD HAVE THE FOLLOWING COLUMNS:\n ",sep=""))
+      message(paste0("ERROR: INVALID ",fileName," FILE '",filein,"' CHECK NUMBER OF COLUMNS\n", 
+                    fileName," FILE SHOULD HAVE THE FOLLOWING COLUMNS:\n "))
       for (i in NAMES){
         message(i)
       }
@@ -59,7 +59,7 @@ importCSVcontrol<-function(filein,Ctype,NAMES,strEndMessage,
       }#end batch_mode
       
       
-      if (exitRun==TRUE){
+      if (exitRun){
         errorOccurred("importCSVcontrol.R",batch_mode)    
       }else{
         data<-"error"

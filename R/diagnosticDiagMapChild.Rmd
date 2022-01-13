@@ -5,20 +5,20 @@ notPlotly<-ifelse(enable_plotlyMaps=="no",TRUE,FALSE)
 
 ```{r chunkdiagMap{{n}},eval = evalPlotly, echo = FALSE, out.width="750px", out.height="750px", warning = FALSE, message = FALSE}
 n<-{{n}}
-map.list<-mapTypes[n]  
-diagnosticMaps(mapColumn,mapdata,GeoLines,
-                         map.list,strTitle,mapping.input.list,sitedata)
+map.list<-residmapTypes[n]  
+p.list<-diagnosticMaps(mapColumn,mapdata,GeoLines,
+                         map.list,strTitle,mapping.input.list,sitedata,p=NA,usedColors=NA,legendPos='bottom',legendJus='left',subTitle=NA)
 
-  
+p.list$p  
 ```
 
 ```{r chunkdiagMap2{{n}},eval = notPlotly, echo = FALSE, fig.width=8, fig.height=8, warning = FALSE, message = FALSE}
 n<-{{n}}
-map.list<-mapTypes[n]  
-diagnosticMaps(mapColumn,mapdata,GeoLines,
-                         map.list,strTitle,mapping.input.list,sitedata)
+map.list<-residmapTypes[n]  
+p.list<-diagnosticMaps(mapColumn,mapdata,GeoLines,
+                         map.list,strTitle,mapping.input.list,sitedata,p=NA,usedColors=NA,legendPos='bottom',legendJus='left', subTitle)
 
-  
+p.list$p  
 ```
 
 ```{r diagMapPgBr{{n}}, results='asis', echo=FALSE}

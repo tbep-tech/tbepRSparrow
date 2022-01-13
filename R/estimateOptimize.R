@@ -53,7 +53,7 @@ estimateOptimize <- function(file.output.list,SelParmValues,estimate.input.list,
   }
   
   
-  filename <- paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_log.txt",sep="")
+  filename <- paste0(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_log.txt")
   sink(file=filename,split="TRUE")
   
   ptm <- proc.time()
@@ -81,7 +81,7 @@ estimateOptimize <- function(file.output.list,SelParmValues,estimate.input.list,
   
   names <- ls(nlfbOut)
   for (k in 1:length(names)) {
-    assign(names[k],eval(parse(text=paste("nlfbOut$",names[k],sep=""))))
+    assign(names[k],eval(parse(text=paste0("nlfbOut$",names[k]))))
   }
   sparrowEsts <- named.list(resid,jacobian,feval,jeval,coefficients,ssquares,lower,upper,maskidx)
   
@@ -110,7 +110,7 @@ estimateOptimize <- function(file.output.list,SelParmValues,estimate.input.list,
   
   # SAVE SPARROW MODEL OBJECT TO FILE
   #  (Use 'load' command to read object into R
-  objfile <- paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_sparrowEsts",sep="")
+  objfile <- paste0(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_sparrowEsts")
   save(sparrowEsts,file=objfile)
   
   

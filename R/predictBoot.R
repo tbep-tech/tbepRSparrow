@@ -132,8 +132,8 @@ predictBoot <- function(bEstimate,estimate.list,estimate.input.list,bootcorrecti
   
   for (j in 1:length(jsrcvar)) {  
     ddliv <- as.matrix((ddliv2[,j] * data[,jsrcvar[j]]) * beta1[,jbsrcvar[j]] ) 
-    assign(paste("pload_inc_",Parmnames[j],sep=""),as.vector(ddliv))   # create variable 'pload_inc_(source name)'
-    srclist_inc[j] <- paste("pload_inc_",Parmnames[j],sep="")
+    assign(paste0("pload_inc_",Parmnames[j]),as.vector(ddliv))   # create variable 'pload_inc_(source name)'
+    srclist_inc[j] <- paste0("pload_inc_",Parmnames[j])
   }
   
   ####################################################
@@ -253,11 +253,11 @@ predictBoot <- function(bEstimate,estimate.list,estimate.input.list,bootcorrecti
                             ee=as.double(ee),PACKAGE="ptnoder") 
     pred <- return_data$ee
     
-    assign(paste("pload_",Parmnames[j],sep=""),pred)   # create variable 'pload_(source name)'
-    srclist_total[j] <- paste("pload_",Parmnames[j],sep="")
+    assign(paste0("pload_",Parmnames[j]),pred)   # create variable 'pload_(source name)'
+    srclist_total[j] <- paste0("pload_",Parmnames[j])
     
-    assign(paste("mpload_",Parmnames[j],sep=""),pred)   # create variable 'mpload_(source name)'
-    srclist_mtotal[j] <- paste("mpload_",Parmnames[j],sep="")
+    assign(paste0("mpload_",Parmnames[j]),pred)   # create variable 'mpload_(source name)'
+    srclist_mtotal[j] <- paste0("mpload_",Parmnames[j])
     
     # Nondecayed total source load
     pred <- matrix(0,nrow=nreach,ncol=1)
@@ -277,8 +277,8 @@ predictBoot <- function(bEstimate,estimate.list,estimate.input.list,bootcorrecti
                             ee=as.double(ee),PACKAGE="ptnoder") 
     pred <- return_data$ee
     
-    assign(paste("pload_nd_",Parmnames[j],sep=""),pred)   # create variable 'pload_(source name)'
-    srclist_nd_total[j] <- paste("pload_nd_",Parmnames[j],sep="")
+    assign(paste0("pload_nd_",Parmnames[j]),pred)   # create variable 'pload_(source name)'
+    srclist_nd_total[j] <- paste0("pload_nd_",Parmnames[j])
   } 
   
   
@@ -317,8 +317,8 @@ predictBoot <- function(bEstimate,estimate.list,estimate.input.list,bootcorrecti
                               ee=as.double(ee),PACKAGE="mptnoder") 
       pred <- return_data$ee
       
-      assign(paste("mpload_",Parmnames[j],sep=""),pred)   # create variable 'mpload_(source name)'
-      srclist_mtotal[j] <- paste("mpload_",Parmnames[j],sep="")
+      assign(paste0("mpload_",Parmnames[j]),pred)   # create variable 'mpload_(source name)'
+      srclist_mtotal[j] <- paste0("mpload_",Parmnames[j])
     }
   }
   
@@ -351,17 +351,17 @@ predictBoot <- function(bEstimate,estimate.list,estimate.input.list,bootcorrecti
   
   srclist_inc_deliv <- character(length(jsrcvar))   # delivered incremental load
   for (i in 1:length(jsrcvar)) {
-    srclist_inc_deliv[i] <- paste(srclist_inc[i],"_deliv",sep="")
+    srclist_inc_deliv[i] <- paste0(srclist_inc[i],"_deliv")
   }
   
   srclist_inc_share <- character(length(jsrcvar))   # incremental source share (percent)
   for (i in 1:length(jsrcvar)) {
-    srclist_inc_share[i] <- paste("share_inc_",srcvar[i],sep="")
+    srclist_inc_share[i] <- paste0("share_inc_",srcvar[i])
   }
   
   srclist_total_share <- character(length(jsrcvar))   # total source share (percent)
   for (i in 1:length(jsrcvar)) {
-    srclist_total_share[i] <- paste("share_total_",srcvar[i],sep="")
+    srclist_total_share[i] <- paste0("share_total_",srcvar[i])
   }
   
   oparmlist <- c("waterid","pload_total",srclist_total,

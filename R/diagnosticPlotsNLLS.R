@@ -12,7 +12,10 @@
 #'@param sitedata.demtarea.class Total drainage area classification variable for calibration 
 #'                               sites.
 #'@param sitedata Sites selected for calibration using `subdata[(subdata$depvar > 0
-#'                & subdata$calsites==1), ]`
+#'                & subdata$calsites==1), ]`. The object contains the dataDictionary 
+#'                ‘sparrowNames’ variables, with records sorted in hydrological 
+#'                (upstream to downstream) order (see the documentation Chapter 
+#'                sub-section 5.1.2 for details)
 #'@param sitedata.landuse Land use for incremental basins for diagnostics.
 #'@param estimate.list list output from `estimate.R`
 #'@param mapping.input.list Named list of sparrow_control settings for mapping: lat_limit, 
@@ -53,9 +56,8 @@ diagnosticPlotsNLLS<- function(file.output.list,class.input.list,sitedata.demtar
                               NA,
                               NA))
   
-  
- # filename <- paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_diagnostic_plots.pdf",sep="")
-  filename <- paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_diagnostic_plots.html",sep="")
+
+  filename <- paste0(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_diagnostic_plots.html")
   reportPath<-paste0(path_master,"diagnosticPlotsNLLS.Rmd")
 
 path_diagnosticMapAttrChild <- file_path_as_absolute(paste0(path_master,"diagnosticMapAttrChild.Rmd"))
@@ -64,18 +66,33 @@ path_diagnosticClassvarChild <- file_path_as_absolute(paste0(path_master,"diagno
 path_diagnosticClassLandChild <- file_path_as_absolute(paste0(path_master,"diagnosticClassLandChild.Rmd"))
 path_diagnosticContiguousChild<- file_path_as_absolute(paste0(path_master,"diagnosticContiguousChild.Rmd"))
 path_diagnosticDiagMapChild<-file_path_as_absolute(paste0(path_master,"diagnosticDiagMapChild.Rmd"))
+path_outputMapsChild<-file_path_as_absolute(paste0(path_master,"outputMapsChild.Rmd"))
+path_outputMaps<-file_path_as_absolute(paste0(path_master,"outputMaps.Rmd"))
 
-#edit title of report
-reportTitle<-paste(run_id,"_diagnostic_plots",sep="")
-#read Rmd file as text
-x <- readLines(reportPath)
-#find where title is designated
-editthis<-x[which(regexpr("title:",gsub(" ","",x))>0)]
-#replace with current reportTitle
-y <- gsub( editthis, paste0("title: '",reportTitle,"'"), x )
-#overwrite the file
-cat(y, file=reportPath, sep="\n") 
-  
+diagnostic_params<-list(
+  validation = FALSE,
+  file.output.list = file.output.list,
+  path_diagnosticMapAttrChild = path_diagnosticMapAttrChild,
+  path_diagnosticCorrChild = path_diagnosticCorrChild,
+  path_diagnosticClassvarChild = path_diagnosticClassvarChild,
+  path_diagnosticClassLandChild = path_diagnosticClassLandChild,
+  path_diagnosticContiguousChild = path_diagnosticContiguousChild,
+  path_diagnosticDiagMapChild = path_diagnosticDiagMapChild,
+  path_outputMapsChild = path_outputMapsChild,
+  path_outputMaps = path_outputMaps,
+  class.input.list = class.input.list,
+  sitedata.demtarea.class = sitedata.demtarea.class,
+  sitedata = sitedata,
+  sitedata.landuse = sitedata.landuse,
+  estimate.list = estimate.list,
+  mapping.input.list = mapping.input.list,
+  Csites.weights.list = Csites.weights.list,
+  Cor.ExplanVars.list = Cor.ExplanVars.list,
+  data_names = data_names,
+  add_vars = add_vars,
+  batch_mode = batch_mode
+)
+
 rmarkdown::render(paste0(path_master,"diagnosticPlotsNLLS.Rmd"),
     params = list(
       validation = FALSE,
@@ -86,6 +103,8 @@ rmarkdown::render(paste0(path_master,"diagnosticPlotsNLLS.Rmd"),
       path_diagnosticClassLandChild = path_diagnosticClassLandChild,
       path_diagnosticContiguousChild = path_diagnosticContiguousChild,
       path_diagnosticDiagMapChild = path_diagnosticDiagMapChild,
+      path_outputMapsChild = path_outputMapsChild,
+      path_outputMaps = path_outputMaps,
       class.input.list = class.input.list,
       sitedata.demtarea.class = sitedata.demtarea.class,
       sitedata = sitedata,
@@ -102,7 +121,10 @@ rmarkdown::render(paste0(path_master,"diagnosticPlotsNLLS.Rmd"),
   )
   
   #shell.exec(filename)
-  
+#add if dynamic
+if (!is.na(diagnosticPlots_timestep)){
+diagnosticPlotsNLLS_dyn(diagnostic_params)
+}
   
   #output siteAttr shapefile
   if (outputESRImaps[4]=="yes"){
@@ -111,7 +133,7 @@ rmarkdown::render(paste0(path_master,"diagnosticPlotsNLLS.Rmd"),
                               xlat,xlon)
     for (s in 1:length(map_siteAttributes.list)){
       if (length(names(sitedata)[which(names(sitedata)==map_siteAttributes.list[s])])!=0){
-        siteAttr<-eval(parse(text= paste("data.frame(",map_siteAttributes.list[s],"=sitedata$",map_siteAttributes.list[s],")",sep="")))
+        siteAttr<-eval(parse(text= paste0("data.frame(",map_siteAttributes.list[s],"=sitedata$",map_siteAttributes.list[s],")")))
         siteAttrshape<-data.frame(siteAttrshape,siteAttr)
         names(siteAttrshape)[length(siteAttrshape)]<-map_siteAttributes.list[s]
       }
@@ -121,15 +143,15 @@ rmarkdown::render(paste0(path_master,"diagnosticPlotsNLLS.Rmd"),
     
     siteAttrshape<-SpatialPointsDataFrame(siteAttrshape[,c("xlon","xlat")],siteAttrshape[,which(!names(siteAttrshape) %in% c("xlat","xlon"))],proj4string=CRS(CRStext))
     
-    if (!dir.exists(paste(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,sep=""))){
-      dir.create(paste(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,sep=""),showWarnings = FALSE)
+    if (!dir.exists(paste0(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep))){
+      dir.create(paste0(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep),showWarnings = FALSE)
     }
-    if (!dir.exists(paste(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"siteAttributes",.Platform$file.sep,sep=""))){
-      dir.create(paste(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"siteAttributes",.Platform$file.sep,sep=""),showWarnings = FALSE)
+    if (!dir.exists(paste0(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"siteAttributes",.Platform$file.sep))){
+      dir.create(paste0(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"siteAttributes",.Platform$file.sep),showWarnings = FALSE)
     }
     
-    maptools::writeSpatialShape(siteAttrshape,paste(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"siteAttributes",.Platform$file.sep,"siteAttrshape",sep=""))
-    cat(showWKT(proj4string(siteAttrshape)),file=paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"siteAttributes",.Platform$file.sep,"siteAttrshape.prj",sep="")) 
+    maptools::writeSpatialShape(siteAttrshape,paste0(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"siteAttributes",.Platform$file.sep,"siteAttrshape"))
+    cat(showWKT(proj4string(siteAttrshape)),file=paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"siteAttributes",.Platform$file.sep,"siteAttrshape.prj")) 
   }
   
   #output residuals shapefile
@@ -159,15 +181,15 @@ rmarkdown::render(paste0(path_master,"diagnosticPlotsNLLS.Rmd"),
     
     residShape <-SpatialPointsDataFrame(residShape[,c("xlon","xlat")],residShape[,which(!names(residShape) %in% c("xlat","xlon"))],proj4string=CRS(CRStext))
     
-    if (!dir.exists(paste(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,sep=""))){
-      dir.create(paste(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,sep=""),showWarnings = FALSE)
+    if (!dir.exists(paste0(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep))){
+      dir.create(paste0(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep),showWarnings = FALSE)
     }
-    if (!dir.exists(paste(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"residuals",.Platform$file.sep,sep=""))){
-      dir.create(paste(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"residuals",.Platform$file.sep,sep=""),showWarnings = FALSE)
+    if (!dir.exists(paste0(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"residuals",.Platform$file.sep))){
+      dir.create(paste0(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"residuals",.Platform$file.sep),showWarnings = FALSE)
     }
     
-    maptools::writeSpatialShape(residShape,paste(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"residuals",.Platform$file.sep,"residShape",sep=""))
-    cat(showWKT(proj4string(residShape)),file=paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"residuals",.Platform$file.sep,"residShape.prj",sep="")) 
+    maptools::writeSpatialShape(residShape,paste0(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"residuals",.Platform$file.sep,"residShape"))
+    cat(showWKT(proj4string(residShape)),file=paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"residuals",.Platform$file.sep,"residShape.prj")) 
     
   }
   

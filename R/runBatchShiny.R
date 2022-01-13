@@ -21,10 +21,9 @@ runBatchShiny<-function(path_PastResults, path_shinyBrowser = NA){
     shinyArgs$path_shinyBrowser<-path_shinyBrowser
     save(shinyArgs, 
          file = paste0(shinyArgs$file.output.list$path_main,.Platform$file.sep,"batch",.Platform$file.sep,"shinyBatch.RData"))
-    #file.copy(path_PastResults,paste0(shinyArgs$file.output.list$path_main,.Platform$file.sep,"batch",.Platform$file.sep,"shinyBatch.RData"))
-    
-    system(paste(Sys.which("Rscript.exe")," ",
-                 file.path(paste(shinyArgs$file.output.list$path_main,.Platform$file.sep,"batch",.Platform$file.sep,"shinyBatch.R",sep="")),sep=""), 
+
+    system(paste0(Sys.which("Rscript.exe")," ",
+                 file.path(paste0(shinyArgs$file.output.list$path_main,.Platform$file.sep,"batch",.Platform$file.sep,"shinyBatch.R"))), 
            wait = FALSE, invisible = FALSE)
     
     

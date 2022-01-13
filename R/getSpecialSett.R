@@ -52,7 +52,7 @@ getSpecialSett<-function(){
                           "length(residualPointStyle)==8",
                           "length(residualPointSize_breakpoints)==8",
                           "areColors(residualMapBackground)",
-                          "length(unique(round(residualPointStyle)==residualPointStyle))==1 & unique(round(residualPointStyle)==residualPointStyle)==TRUE",
+                          "length(unique(round(residualPointStyle)==residualPointStyle))==1 & unique(round(residualPointStyle)==residualPointStyle)",
                           
                           "length(siteAttrColors)>1",
                           "areColors(siteAttrColors)",

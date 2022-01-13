@@ -33,12 +33,142 @@ checkDrainageareaMapPrep<-function(file.output.list,mapping.input.list,
              parentObj = list(NA,NA)) 
 
     
+  if (k %in% c(2,3)){#hydseq, breakpoints by plotpage
+    plots<-setupDynamicMaps(data1,map_years,map_seasons,mapPageGroupBy,mapsPerPage, Rshiny=FALSE, enable_plotlyMaps)
+    DAreaFailCheckObj<-merge(DAreaFailCheckObj,data1[c("waterid","year","season")],by="waterid")
+    break2<-list()
+    Mcol2<-list()
+     for (p in unique(plots$plotKey)){
+      if (!is.na(plots[plots$plotKey==p,]$year)  & !is.na(plots[plots$plotKey==p,]$season)){
+        subdata1<-data1[data1$year %in% plots[plots$plotKey==p,]$year & 
+                          data1$season %in% plots[plots$plotKey==p,]$season,]
+        subDAreaFailCheckObj<-DAreaFailCheckObj[DAreaFailCheckObj$year %in% plots[plots$plotKey==p,]$year & 
+                                                  DAreaFailCheckObj$season %in% plots[plots$plotKey==p,]$season,]
+      }else if (!is.na(plots[plots$plotKey==p,]$year)){
+        subdata1<-data1[data1$year %in% plots[plots$plotKey==p,]$year,]
+        subDAreaFailCheckObj<-DAreaFailCheckObj[DAreaFailCheckObj$year,]
+      }else if (!is.na(plots[plots$plotKey==p,]$season)){
+        subdata1<-data1[data1$season %in% plots[plots$plotKey==p,]$season,]
+        subDAreaFailCheckObj<-DAreaFailCheckObj[DAreaFailCheckObj$season,]
+      }else{
+        subdata1<-data1
+        subDAreaFailCheckObj<-DAreaFailCheckObj
+      }
+      
+      if(k >= 3) {
+        dname <- paste0("vvar <- subDAreaFailCheckObj$",map.vars.list[k])
+        eval(parse(text=dname)) 
+        waterid <- subDAreaFailCheckObj$waterid
+      } else {
+        dname <- paste0("vvar <- subdata1$",map.vars.list[k])
+        eval(parse(text=dname)) 
+        waterid <- subdata1$waterid
+      }
+      
+      # check for NAs
+      vvar<-ifelse(is.na(vvar),0.0,vvar)
+      
+      # link MAPCOLORS for variable to shape object (https://gist.github.com/mbacou/5880859)
+      # Color classification of variable
+      iprob<-5
+      set_unique_breaks <- function(x,ip) {
+        chk1 <- quantile(vvar, probs=0:ip/ip)
+        chk <- unique(quantile(vvar, probs=0:ip/ip)) # define quartiles
+        # exit if the condition is met
+        if (length(chk1) == length(chk)) return(ip)
+        ip<-ip-1
+        Recall(x,ip) # run the function again
+      }
+      iprob <- set_unique_breaks(vvar,iprob)
+
+      if(iprob >=2 ) {
+
+        
+        
+        chk1 <- quantile(vvar, probs=0:iprob/iprob)
+        chk <- unique(quantile(vvar, probs=0:iprob/iprob)) # define quartiles
+        qvars <- as.integer(cut(vvar, quantile(vvar, probs=0:iprob/iprob), include.lowest=TRUE))  # classify variable
+        #Mcolors <- c("blue","dark green","gold","red","dark red")
+        Mcolors<-predictionMapColors
+        Mcolors <- Mcolors[1:(length(chk1)-1)]
+        # http://research.stowers-institute.org/efg/R/Color/Chart/index.htm
+        MAPCOLORS <- as.character(Mcolors[qvars])
+        
+        
+        dmap <- data.frame(waterid,MAPCOLORS,vvar)
+        colnames(dmap) <- c(commonvar,"MAPCOLORS","VVAR")
+        dmap$MAPCOLORS <- as.character(dmap$MAPCOLORS)
+        
+        
+        
+        if(k >= 3) {
+          # add background color for matched drainage areas 
+          fwaterid <- data1$waterid
+          fMAPCOLORS <- rep("grey",length(fwaterid))
+          fdf <- data.frame(fwaterid,fMAPCOLORS)
+          newdf <- merge(dmap,fdf, by.y = "fwaterid", by.x = commonvar, all.x=TRUE, all.y=TRUE)
+          newdf$MAPCOLORS <- ifelse(is.na(newdf$MAPCOLORS),"grey",as.character(newdf$MAPCOLORS))
+          dmap<-newdf
+        }
+        
+        
+        
+        if(k >= 3) {
+          break1[k][[1]][[p]] <- as.character(chk[1:iprob]+1)
+          for (i in 1:iprob) {
+            break1[k][[1]][i] <- paste0(round(chk[i],digit=2)," TO ",round(chk[i+1],digit=2))
+          }
+          break1[k][[1]][[p]][iprob+1] <- "Areas Match"
+          nlty <-rep(1,iprob)
+          nlwd <- rep(0.8,iprob)
+          Mcol <- length(Mcolors)+1
+          Mcol[1:iprob] <- Mcolors[1:iprob]
+          Mcol[iprob+1] <- "grey"
+        } else {
+          break1[k][[1]][[p]] <- as.character(chk[1:iprob])
+          for (i in 1:iprob) {
+            break1[k][[1]][[p]][i] <- paste0(round(chk[i],digit=2)," TO ",round(chk[i+1],digit=2))
+          }
+          nlty <-rep(1,iprob)
+          nlwd <- rep(0.8,iprob)
+          Mcol<-Mcolors
+        }
+      
+        if (p==plots$plotKey[1]){
+          dmaptot<-dmap
+          # break2[[1]]<-break1
+          # break1<-break2
+          Mcol2[[p]]<-Mcol
+          Mcol<-Mcol2
+        }else{
+          dmaptot<-rbind(dmaptot,dmap)
+          # break2[[which(unique(plots$plotKey)==p)]]<-break1
+          # break1<-break2
+          Mcol2[[p]]<-Mcol
+          Mcol<-Mcol2
+        }
+        
+      }else{
+        # no map
+      }  
+    }#end for p
+    
+    if (exists("dmaptot")){
+      dmap<-dmaptot
+     prepReturns.list<-named.list(dmap,break1, nlty, nlwd, Mcol) 
+    }else{
+      prepReturns.list<-NA
+    }
+    
+    
+    }else{#end if hydseq
+  
     if(k >= 3) {
-      dname <- paste("vvar <- DAreaFailCheckObj$",map.vars.list[k],sep="")
+      dname <- paste0("vvar <- DAreaFailCheckObj$",map.vars.list[k])
       eval(parse(text=dname)) 
       waterid <- DAreaFailCheckObj$waterid
     } else {
-      dname <- paste("vvar <- data1$",map.vars.list[k],sep="")
+      dname <- paste0("vvar <- data1$",map.vars.list[k])
       eval(parse(text=dname)) 
       waterid <- data1$waterid
     }
@@ -94,7 +224,7 @@ checkDrainageareaMapPrep<-function(file.output.list,mapping.input.list,
       if(k >= 3) {
         break1 <- as.character(chk[1:iprob]+1)
         for (i in 1:iprob) {
-          break1[i] <- paste(round(chk[i],digit=2)," TO ",round(chk[i+1],digit=2),sep="")
+          break1[i] <- paste0(round(chk[i],digit=2)," TO ",round(chk[i+1],digit=2))
         }
         break1[iprob+1] <- "Areas Match"
         nlty <-rep(1,iprob)
@@ -105,19 +235,19 @@ checkDrainageareaMapPrep<-function(file.output.list,mapping.input.list,
       } else {
         break1 <- as.character(chk[1:iprob])
         for (i in 1:iprob) {
-          break1[i] <- paste(round(chk[i],digit=2)," TO ",round(chk[i+1],digit=2),sep="")
+          break1[i] <- paste0(round(chk[i],digit=2)," TO ",round(chk[i+1],digit=2))
         }
         nlty <-rep(1,iprob)
         nlwd <- rep(0.8,iprob)
         Mcol<-Mcolors
       }
-      
+ 
       prepReturns.list<-named.list(dmap,break1, nlty, nlwd, Mcol)
 
     }else{
       prepReturns.list<-NA
     }
-
+}#end hydseq
       return(prepReturns.list)
       
     }#end func

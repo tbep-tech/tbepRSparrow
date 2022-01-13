@@ -105,14 +105,14 @@ predictOutCSV <- function(file.output.list,estimate.list,predict.list,
   }#if add_vars
   outvars2 <- outvars2[with(outvars2,order(outvars2$waterid)), ]  # sort by waterid
   
-  fileout <- paste(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predicts_load.csv",sep="")
+  fileout <- paste0(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predicts_load.csv")
   fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
          dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
   
   # Output the prediction variable names and units to CSV file
   lunitsOut <- data.frame(oparmlist,loadunits,oparmlistExpl)
   colnames(lunitsOut) <- c("Prediction Metric Name","Units","Metric Explanation")
-  fileout <- paste(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predicts_load_units.csv",sep="")
+  fileout <- paste0(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predicts_load_units.csv")
   fwrite(lunitsOut,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
          dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
   
@@ -138,14 +138,14 @@ predictOutCSV <- function(file.output.list,estimate.list,predict.list,
   }# if add_vars
   outvars2 <- outvars2[with(outvars2,order(outvars2$waterid)), ]    # sort by waterid
   
-  fileout <- paste(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predicts_yield.csv",sep="")
+  fileout <- paste0(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predicts_yield.csv")
   fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
          dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
   
   # Output the prediction variable names and units to CSV file
   yunitsOut <- data.frame(oyieldlist,yieldunits,oyieldlistExpl)
   colnames(yunitsOut) <- c("Prediction Metric Name","Units","Metric Explanation")
-  fileout <- paste(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predicts_yield_units.csv",sep="")
+  fileout <- paste0(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predicts_yield_units.csv")
   fwrite(yunitsOut,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
          dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
   

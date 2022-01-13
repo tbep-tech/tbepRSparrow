@@ -34,7 +34,7 @@ predictScenariosOutCSV <- function(#Rshiny
   #################################################
   
   
-  if (Rshiny==TRUE){
+  if (Rshiny){
     scenario_name<-input$scenarioName
   }
   # define "space" for printing
@@ -128,14 +128,14 @@ predictScenariosOutCSV <- function(#Rshiny
   }# if add_vars
   outvars2 <- outvars2[with(outvars2,order(outvars2$waterid)), ]  # sort by waterid
   
-  fileout <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_predicts_load_scenario.csv",sep="")
+  fileout <- paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_predicts_load_scenario.csv")
   fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,col.names=TRUE,
          dec = csv_decimalSeparator,sep=csv_columnSeparator,na = "NA")
   
   # Output the prediction variable names and units to CSV file
   lunitsOut <- data.frame(oparmlist,loadunits)
   colnames(lunitsOut) <- c("Prediction Metric Name","Units")
-  fileout <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_predicts_load_scenario_units.csv",sep="")
+  fileout <- paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_predicts_load_scenario_units.csv")
   fwrite(lunitsOut,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
          dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
   
@@ -160,7 +160,7 @@ predictScenariosOutCSV <- function(#Rshiny
   }#if add_vars
   outvars2 <- outvars2[with(outvars2,order(outvars2$waterid)), ]  # sort by waterid
   
-  fileout <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_predicts_loadchg_scenario.csv",sep="")
+  fileout <- paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_predicts_loadchg_scenario.csv")
   fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,col.names=TRUE,
          dec = csv_decimalSeparator,sep=csv_columnSeparator,na = "NA")
   
@@ -188,14 +188,14 @@ predictScenariosOutCSV <- function(#Rshiny
   }#if add_vars
   outvars2 <- outvars2[with(outvars2,order(outvars2$waterid)), ]    # sort by waterid
   
-  fileout <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_predicts_yield_scenario.csv",sep="")
+  fileout <- paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_predicts_yield_scenario.csv")
   fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
          dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
   
   # Output the prediction variable names and units to CSV file
   yunitsOut <- data.frame(oyieldlist,yieldunits)
   colnames(yunitsOut) <- c("Prediction Metric Name","Units")
-  fileout <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_predicts_yield_scenario_units.csv",sep="")
+  fileout <- paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_predicts_yield_scenario_units.csv")
   fwrite(yunitsOut,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
          dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
   
@@ -221,14 +221,14 @@ predictScenariosOutCSV <- function(#Rshiny
   }#if add_vars
   outvars2 <- outvars2[with(outvars2,order(outvars2$waterid)), ]    # sort by waterid
   
-  fileout <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_predicts_yieldchg_scenario.csv",sep="")
+  fileout <- paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_predicts_yieldchg_scenario.csv")
   fwrite(outvars2,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
          dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
   
   # Output meta data to text file documenting settings for scenario 
-  fileout <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_scenario_metainfo.txt",sep="")
+  fileout <- paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_scenario_metainfo.txt")
   sink(file=fileout,split="FALSE",append=FALSE)
-  if (Rshiny==FALSE){
+  if (!Rshiny){
     
     
     outvars2<-named.list(select_scenarioReachAreas,select_targetReachWatersheds,
@@ -272,11 +272,11 @@ predictScenariosOutCSV <- function(#Rshiny
   sink()
   
   
-  if (Rshiny==FALSE){
+  if (!Rshiny){
     #save the modifySubdata routine with a record of the source change settings
     filesList<-c("_modifySubdata.R")
-    sapply(filesList, function(x) file.copy(paste(path_results,run_id,x,sep=""),
-                                            paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,x,sep="")))
+    sapply(filesList, function(x) file.copy(paste0(path_results,run_id,x),
+                                            paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,x)))
   }
   
   

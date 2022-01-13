@@ -50,7 +50,7 @@ diagnosticPlotsValidate <- function(file.output.list,class.input.list,vsitedata.
                               NA,
                               NA))
   
-  filename <- paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_validation_plots.html",sep="")
+  filename <- paste0(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_validation_plots.html")
   reportPath<-paste0(path_master,"diagnosticPlotsNLLS.Rmd")
   
   
@@ -63,7 +63,7 @@ diagnosticPlotsValidate <- function(file.output.list,class.input.list,vsitedata.
   path_diagnosticDiagMapChild<-file_path_as_absolute(paste0(path_master,"diagnosticDiagMapChild.Rmd"))
   
   #edit title of report
-  reportTitle<-paste(run_id,"_validation_plots",sep="")
+  reportTitle<-paste0(run_id,"_validation_plots")
   #read Rmd file as text
   x <- readLines(reportPath)
   #find where title is designated
@@ -122,22 +122,19 @@ diagnosticPlotsValidate <- function(file.output.list,class.input.list,vsitedata.
       
       validationResidShape <-SpatialPointsDataFrame(validationResidShape[,c("xlon","xlat")],validationResidShape[,which(!names(validationResidShape) %in% c("xlat","xlon"))],proj4string=CRS(CRStext))
       
-      if (!dir.exists(paste(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,sep=""))){
-        dir.create(paste(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,sep=""),showWarnings = FALSE)
+      if (!dir.exists(paste0(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep))){
+        dir.create(paste0(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep),showWarnings = FALSE)
       }
-      if (!dir.exists(paste(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"residuals",.Platform$file.sep,sep=""))){
-        dir.create(paste(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"residuals",.Platform$file.sep,sep=""),showWarnings = FALSE)
+      if (!dir.exists(paste0(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"residuals",.Platform$file.sep))){
+        dir.create(paste0(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"residuals",.Platform$file.sep),showWarnings = FALSE)
       }
       
-      maptools::writeSpatialShape(validationResidShape,paste(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"residuals",.Platform$file.sep,"validationResidShape",sep=""))
-      cat(showWKT(proj4string(validationResidShape)),file=paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"residuals",.Platform$file.sep,"validationResidShape.prj",sep="")) 
+      maptools::writeSpatialShape(validationResidShape,paste0(path_results,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"residuals",.Platform$file.sep,"validationResidShape"))
+      cat(showWKT(proj4string(validationResidShape)),file=paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"residuals",.Platform$file.sep,"validationResidShape.prj")) 
       
     }
     
-  #}  # end check for existence of line map
-  
- # dev.off()  # shuts down current graphics device
-#  graphics.off()  # shuts down all open graphics devices
+
   
   
 }#end function

@@ -12,10 +12,14 @@ fixDupLatLons <- function(latLon){
   
   
   xd <- duplicated(latLon)
-  for (i in 1:length(xd)) {
-    if(xd[i]==TRUE) {
-      latLon[i] <- latLon[i]+runif(1,min=0.000001,max=0.000009)
-    }
+
+  # Generate random values for each latLon (won't use them all)
+  random_vals_to_add <- sapply(seq_along(latLon), function(x) {
+    runif(1,min=0.000001,max=0.000009)
+  })
+  # Only add random values if there are duplicates
+  if(any(xd)) {
+    latLon[xd] <- latLon[xd] + random_vals_to_add[xd]
   }
   
   return(latLon)

@@ -1,0 +1,289 @@
+---
+title: "`r params$rmdTitle`"
+author: ""
+date: "`r paste0('Output on ',format(Sys.time(), '%m-%d-%Y'))`"
+output: html_document
+params:
+  rmdTitle: rmdTitle
+  diagnostic_params: diagnostic_params
+  plotIndex: plotIndex
+  path_diagnosticPlotsNLLS_dynOutChild: path_diagnosticPlotsNLLS_dynOutChild
+  
+---
+
+
+
+```{r outputMaps, eval=TRUE, echo=FALSE,warning=FALSE, message = FALSE,fig.width=8, fig.height=8}
+#unpack params
+path_diagnosticPlotsNLLS_dynOutChild<-params$path_diagnosticPlotsNLLS_dynOutChild
+diagnostic_params<-params$diagnostic_params
+plotIndex<-params$plotIndex
+
+unPackList(lists = list(diagnostic_params = diagnostic_params),
+           parentObj = list(NA))
+plotList<-create_diagnosticPlotList()
+
+
+#run setup diagnostic
+if (!validation){
+  # create global variable from list names (Mdiagnostics.list)
+  unPackList(lists = list(mapping.input.list = mapping.input.list,
+                          Mdiagnostics.list = estimate.list$Mdiagnostics.list,
+                          file.output.list = file.output.list,
+                          class.input.list = class.input.list),
+             parentObj = list(NA,
+                              NA,
+                              NA,
+                              NA))
+  Mdiagnostics.list <- estimate.list$Mdiagnostics.list
+  
+}else{
+  unPackList(lists = list(mapping.input.list = mapping.input.list,
+                          vMdiagnostics.list = estimate.list$vMdiagnostics.list,
+                          file.output.list = file.output.list,
+                          class.input.list = class.input.list),
+             parentObj = list(NA,
+                              NA,
+                              NA,
+                              NA))
+}
+
+hline <- function(y = 0, color = "red") {
+  list(
+    type = "line", 
+    x0 = 0, 
+    x1 = 1, 
+    xref = "paper",
+    y0 = y, 
+    y1 = y, 
+    line = list(color = color)
+  )
+}
+pnch<-as.character(pchPlotlyCross[pchPlotlyCross$pch==diagnosticPlotPointStyle,]$plotly)
+markerSize<-diagnosticPlotPointSize*10
+markerCols<-colorNumeric(c("black","white"), 1:2)
+markerList = paste0("list(symbol = pnch,
+                       size = ",markerSize,",")
+if (regexpr("open",pnch)>0){
+  markerList<-paste0(markerList,"color = markerCols(1))")
+}else{
+  markerList<-paste0(markerList,"line = list(color = markerCols(1), width = 0.8),color = markerCols(1))")
+}
+
+# contiguous class variables by sites
+class <- array(0,dim=c(nrow=nrow(sitedata),ncol=length(classvar))) 
+for (k in 1:length(classvar)) { 
+  for (i in 1:nrow(sitedata)) {
+    class[i,k] <- as.numeric(eval(parse(text=paste0("sitedata$",classvar[k],"[",i,"]"))))
+  } 
+} 
+
+# Create 'classvar2' for plotting landuse non-contiguous class
+#   following code executes:  classvar2 <- c("forest_pct","agric_pct","urban_pct","shrubgrass_pct")
+if(!is.na( class_landuse[1])){
+  classvar2 <- character(length(class_landuse))
+  for (i in 1:length(class_landuse)) {
+    classvar2[i] <- paste0(class_landuse[i],"_pct")
+  }
+}
+
+# Obtain CLASS region numbers
+grp <- table(class[,1])   # get labels
+xx <- as.data.frame(grp)  # convert table to dataframe...
+grp <- as.numeric(levels(xx$Var1)[xx$Var1])  # convert factor levels to numeric values
+
+plotList<-create_diagnosticPlotList()
+
+```
+
+```{r  echo=FALSE, results='asis', eval=TRUE}
+cat(eval(parse(text=paste0("plotList$",plotIndex,"$header"))))
+```
+
+```{r, eval=TRUE, echo=FALSE,warning=FALSE, message = FALSE, out.width="750px", out.height="750px"} 
+p.list<-list()
+
+if (diagnosticPlots_timestep=="season"){
+  diagnosticPlots_timestep<-unique(sitedata$season)
+     diagnosticPlots_timestep<-diagnosticPlots_timestep[match(c("winter","spring","summer","fall"),diagnosticPlots_timestep)]
+}else if (diagnosticPlots_timestep=="year"){
+  diagnosticPlots_timestep<-unique(sitedata$year)
+}
+
+if (!plotIndex %in% c("p4","p6","p7","p8","p11","p13","p14","p15")){
+  for (t in diagnosticPlots_timestep){
+    MdiagSub<-estimate.list$Mdiagnostics.list
+    if (diagnosticPlots_timestep %in% unique(sitedata$year)){
+      subStaid<-sitedata[sitedata$year==t ,]$staid
+    }else{
+      subStaid<-sitedata[sitedata$season==t,]$staid  
+    }
+    
+
+    # MdiagSub<-MdiagSub[MdiagSub$xstaid %in% subStaid,]
+    MdiagSub<-lapply(Mdiagnostics.list,function(x) x[which(MdiagSub$xstaid %in% subStaid)])
+
+    unPackList(lists = list(MdiagSub = MdiagSub),
+               parentObj = list(NA))
+    
+    sitedata_orig<-sitedata
+    sitedata<-sitedata[sitedata$staid %in% subStaid,]
+    
+    sitedata.demtarea.class_orig<-sitedata.demtarea.class
+    sitedata.demtarea.class<-sitedata.demtarea.class[which(sitedata$staid %in% subStaid)]
+    
+    plotParam.list<-eval(parse(text = paste0("plotList$",plotIndex,"$plotParams")))
+    plotParam.list<-eval(parse(text = paste0("named.list(",plotParam.list,")")))
+    
+    if (plotIndex=="p12"){
+      plotParam.list$ratio.obs.pred<-pratio.obs.pred
+    }
+    
+    p<-eval(parse(text = paste0("plotList$",plotIndex,"$plotFunc(plotParam.list)"))) 
+    
+    eval(parse(text=paste0("p.list$p",which(t==diagnosticPlots_timestep),"<-p")))
+    sitedata<-sitedata_orig
+    sitedata.demtarea.class<-sitedata.demtarea.class_orig
+  }
+}else{#plotIndex==p4
+  if (plotIndex %in% c("p4","p11")){
+    condList<-"!is.na(Cor.ExplanVars.list)"
+  }else if (plotIndex %in% c("p6","p13")){
+    condList<-"classvar!='sitedata.demtarea.class'"
+  }else if (plotIndex %in% c("p7","p14")){
+    condList<-"!is.na( class_landuse[1])"
+  }else if (plotIndex %in% c("p8","p15")){
+    condList<-"TRUE"
+  }
+  
+  
+  if(eval(parse(text=condList))){ 
+    
+    if (plotIndex %in% c("p4","p11")){
+      condLoop<-Cor.ExplanVars.list$names
+    }else if (plotIndex %in% c("p6","p13")){
+      condLoop<-classvar
+    }else if (plotIndex %in% c("p7","p14")){
+      condLoop<-classvar2
+    }else if (plotIndex %in% c("p8","p15")){
+      condLoop<-grp
+    }
+    
+    for (i in 1:(length(condLoop))){
+      
+      for (t in diagnosticPlots_timestep){
+        MdiagSub<-estimate.list$Mdiagnostics.list
+        if (diagnosticPlots_timestep %in% unique(sitedata$year)){
+          subStaid<-sitedata[sitedata$year==t ,]$staid
+        }else{
+          subStaid<-sitedata[sitedata$season==t,]$staid  
+        }
+        
+        MdiagSub<-lapply(Mdiagnostics.list,function(x) x[which(MdiagSub$xstaid %in% subStaid)])
+        
+        unPackList(lists = list(MdiagSub = MdiagSub),
+                   parentObj = list(NA))
+        
+        if (plotIndex=="p4"){
+          corrData<-ratio.obs.pred
+        }else{
+          corrData<-pratio.obs.pred 
+        }
+        if (plotIndex %in% c("p6","p7")){
+          boxvar<-ratio.obs.pred 
+        }else{
+          boxvar<-pratio.obs.pred
+        }
+        
+        
+        sitedata_orig<-sitedata
+        sitedata<-sitedata[sitedata$staid %in% subStaid,]
+        
+        sitedata.landuse_orig<-sitedata.landuse
+        sitedata.landuse<-sitedata.landuse[which(estimate.list$Mdiagnostics.list$xstaid %in% subStaid),]
+        
+        if(!is.na(Cor.ExplanVars.list)){ 
+          Cor.ExplanVars.list_orig<-Cor.ExplanVars.list
+          Cor.ExplanVars.list$cmatrixM_all<-Cor.ExplanVars.list$cmatrixM_all[which(estimate.list$Mdiagnostics.list$xstaid %in% subStaid),]
+        }
+        
+        plotParam.list<-eval(parse(text = paste0("plotList$",plotIndex,"$plotParams")))
+        plotParam.list<-eval(parse(text = paste0("named.list(",plotParam.list,")")))
+        
+        if (plotIndex=="p15"){
+          plotParam.list$predict<-ppredict
+          plotParam.list$yldobs<-pyldobs
+          plotParam.list$yldpredict<-pyldpredict
+          plotParam.list$Resids<-pResids
+        }
+        
+        p<-eval(parse(text = paste0("plotList$",plotIndex,"$plotFunc(plotParam.list)"))) 
+        
+        eval(parse(text=paste0("p.list$p",i,which(t==diagnosticPlots_timestep),"<-p")))
+        sitedata<-sitedata_orig
+        if(!is.na(Cor.ExplanVars.list)){ 
+          Cor.ExplanVars.list<-Cor.ExplanVars.list_orig
+        }
+        sitedata.landuse<-sitedata.landuse_orig
+      }
+    }
+  }
+}
+
+if (!plotIndex %in% c("p4","p6","p7","p8","p11","p13","p14","p15")){
+  rmd <- sapply(
+    1:(length(names(p.list))),
+    function(i) {
+      knitr::knit_expand(path_diagnosticPlotsNLLS_dynOutChild, i = i)
+    }
+  )
+  rmd <- paste(rmd, collapse = "\n")
+}else if (plotIndex %in% c("p4","p11")){#p4
+  rmd <- sapply(
+    as.numeric(gsub("p","",names(p.list))),
+    function(i) {
+      knitr::knit_expand(gsub("diagnosticPlotsNLLS_dynChild.Rmd","diagnosticPlotsNLLS_dynChildCorr.Rmd",
+                              path_diagnosticPlotsNLLS_dynOutChild), i = i)
+    }
+  )
+  rmd <- paste(rmd, collapse = "\n")
+}else if (plotIndex %in% c("p6","p13")){
+  rmd <- sapply(
+    as.numeric(gsub("p","",names(p.list))),
+    function(i) {
+      knitr::knit_expand(gsub("diagnosticPlotsNLLS_dynChild.Rmd","diagnosticPlotsNLLS_dynChildClassvar.Rmd",
+                              path_diagnosticPlotsNLLS_dynOutChild), i = i)
+    }
+  )
+  rmd <- paste(rmd, collapse = "\n")   
+  
+}else if (plotIndex %in% c("p7","p14")){
+  rmd <- sapply(
+    as.numeric(gsub("p","",names(p.list))),
+    function(i) {
+      knitr::knit_expand(gsub("diagnosticPlotsNLLS_dynChild.Rmd","diagnosticPlotsNLLS_dynChildClassLand.Rmd",
+                              path_diagnosticPlotsNLLS_dynOutChild), i = i)
+    }
+  )
+  rmd <- paste(rmd, collapse = "\n")   
+}else if (plotIndex %in% c("p8","p15")){
+  rmd <- sapply(
+    as.numeric(gsub("p","",names(p.list))),
+    function(i) {
+      knitr::knit_expand(gsub("diagnosticPlotsNLLS_dynChild.Rmd","diagnosticPlotsNLLS_dynChildContiguous.Rmd",
+                              path_diagnosticPlotsNLLS_dynOutChild), i = i)
+    }
+  )
+  rmd <- paste(rmd, collapse = "\n")   
+}
+```
+
+```{r renderOut, echo=FALSE, results='asis', warning=FALSE, message=FALSE}
+
+rendered <- knitr::knit(text = rmd, quiet = TRUE)
+cat("\n \n")
+cat(rendered, sep = "\n")
+
+
+```
+

@@ -64,7 +64,7 @@ if (RSPARROW_errorOption=="yes"){
 allMetrics<-as.character(unlist(inputShiny[which(regexpr("Check",names(inputShiny))>0 & names(inputShiny)!="outCheck")]))
 
 
-if (inputShiny$mapType=="Source Change Scenarios"){
+if (grepl("Scenarios",input$mapType)){
   output_map_type<-tolower(as.character(inputShiny$outCheck))
 }else{
   output_map_type<-inputShiny$mapType
@@ -92,7 +92,7 @@ if (inputShiny$mapType=="Stream" | inputShiny$mapType=="Catchment"){
 }else if (inputShiny$mapType=="Site Attributes"){
   
   for (a in inputShiny$dataCheck){
-    filename<- paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"SiteAttributes",.Platform$file.sep,run_id,"_SiteAttributes_",a,".pdf",sep="")
+    filename<- paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"SiteAttributes",.Platform$file.sep,run_id,"_SiteAttributes_",a,".pdf")
     if (inputShiny$enablePlotly=="static"){
       pdf(filename)
     }else{
@@ -148,7 +148,7 @@ if (inputShiny$mapType=="Stream" | inputShiny$mapType=="Catchment"){
     siteAttrshape<-data.frame(xlat,xlon)
     for (s in 1:length(map_siteAttributes.list)){
       if (length(names(sitedata)[which(names(sitedata)==map_siteAttributes.list[s])])!=0){
-        siteAttr<-eval(parse(text= paste("data.frame(",map_siteAttributes.list[s],"=sitedata$",map_siteAttributes.list[s],")",sep="")))
+        siteAttr<-eval(parse(text= paste0("data.frame(",map_siteAttributes.list[s],"=sitedata$",map_siteAttributes.list[s],")")))
         siteAttrshape<-data.frame(siteAttrshape,siteAttr)
         names(siteAttrshape)[length(siteAttrshape)]<-map_siteAttributes.list[s]
       }
@@ -158,18 +158,18 @@ if (inputShiny$mapType=="Stream" | inputShiny$mapType=="Catchment"){
     
     siteAttrshape<-sp::SpatialPointsDataFrame(siteAttrshape[,c("xlon","xlat")],siteAttrshape[,which(!names(siteAttrshape) %in% c("xlat","xlon"))],proj4string=sp::CRS(CRStext))
     
-    if (!dir.exists(paste(path_results,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,sep=""))){
-      dir.create(paste(path_results,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,sep=""),showWarnings = FALSE)
+    if (!dir.exists(paste0(path_results,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep))){
+      dir.create(paste0(path_results,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep),showWarnings = FALSE)
     }
-    if (!dir.exists(paste(path_results,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"siteAttributes",.Platform$file.sep,sep=""))){
-      dir.create(paste(path_results,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"siteAttributes",.Platform$file.sep,sep=""),showWarnings = FALSE)
+    if (!dir.exists(paste0(path_results,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"siteAttributes",.Platform$file.sep))){
+      dir.create(paste0(path_results,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"siteAttributes",.Platform$file.sep),showWarnings = FALSE)
     }
     
-    maptools::writeSpatialShape(siteAttrshape,paste(path_results,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"siteAttributes",.Platform$file.sep,"siteAttrshape",sep=""))
-    cat(rgdal::showWKT(sp::proj4string(siteAttrshape)),file=paste(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"siteAttributes",.Platform$file.sep,"siteAttrshape.prj",sep="")) 
+    maptools::writeSpatialShape(siteAttrshape,paste0(path_results,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"siteAttributes",.Platform$file.sep,"siteAttrshape"))
+    cat(rgdal::showWKT(sp::proj4string(siteAttrshape)),file=paste0(path_results,.Platform$file.sep,"maps",.Platform$file.sep,"Interactive",.Platform$file.sep,"ESRI_ShapeFiles",.Platform$file.sep,"siteAttributes",.Platform$file.sep,"siteAttrshape.prj")) 
   }
   
-}else if (inputShiny$mapType=="Source Change Scenarios"){
+}else if (grepl("Scenarios",input$mapType)){
   
   
   

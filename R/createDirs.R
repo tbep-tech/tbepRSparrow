@@ -27,7 +27,7 @@ createDirs<-function(file.output.list,if_userModifyData,
   path_results<-dirname(path_results)
   
   #create main directory
-  dir.create(paste(path_results,.Platform$file.sep,run_id,sep=""))
+  dir.create(paste0(path_results,.Platform$file.sep,run_id))
   #createsubdirectories
   dirList<-c("data",
              "estimate",
@@ -35,9 +35,9 @@ createDirs<-function(file.output.list,if_userModifyData,
              "predict",
              "scenarios")
   
-  sapply(dirList, function(x) dir.create(paste(path_results,.Platform$file.sep,run_id,.Platform$file.sep,x,sep="")))
+  sapply(dirList, function(x) dir.create(paste0(path_results,.Platform$file.sep,run_id,.Platform$file.sep,x)))
   if (batch_mode=="yes"){
-    dir.create(paste(path_results,.Platform$file.sep,run_id,.Platform$file.sep,"batchSessionInfo",sep=""))
+    dir.create(paste0(path_results,.Platform$file.sep,run_id,.Platform$file.sep,"batchSessionInfo"))
   }
   
   #match varType in dataDictionary to parmTypes in parameters
@@ -52,11 +52,11 @@ createDirs<-function(file.output.list,if_userModifyData,
   if (if_userModifyData=="no"){
     filesList<-filesList[which(filesList!="userModifyData.R")]
   }
-  fileCopy<-sapply(filesList, function(x) file.copy(paste(path_results,.Platform$file.sep,x,sep=""),
-                                                    paste(path_results,.Platform$file.sep,run_id,.Platform$file.sep,run_id,"_",x,sep=""),overwrite=TRUE))
+  fileCopy<-sapply(filesList, function(x) file.copy(paste0(path_results,.Platform$file.sep,x),
+                                                    paste0(path_results,.Platform$file.sep,run_id,.Platform$file.sep,run_id,"_",x),overwrite=TRUE))
   fileCopy<-data.frame(success = t(fileCopy)[1,])
-  fileCopy$path<-paste(path_results,.Platform$file.sep,filesList,sep="")
-  fileCopy<-fileCopy[which(fileCopy$success==FALSE),]
+  fileCopy$path<-paste0(path_results,.Platform$file.sep,filesList)
+  fileCopy<-fileCopy[which(!fileCopy$success),]
   
   if (nrow(fileCopy)!=0){
     for (x in fileCopy$path){

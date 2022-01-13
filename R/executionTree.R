@@ -29,7 +29,7 @@ executionTree<-function(path_main,startRoutine = "runRsparrow.R",
                         outputType = "data.tree",pruneTree = NA, treeLimit = NA){
   
   #if output to data.tree only use first occurances
-  allOccurances<-ifelse(allOccurances==TRUE & outputType=="data.tree",FALSE,allOccurances)
+  allOccurances<-ifelse(allOccurances & outputType=="data.tree",FALSE,allOccurances)
   
   
   #get all files
@@ -90,7 +90,6 @@ executionTree<-function(path_main,startRoutine = "runRsparrow.R",
   }#if not all types
   
   #format allRoutines to catch only function calls (don't include batchRun--duplication)
-  #allRoutines<-ifelse(allRoutines %in% basename(forFiles),paste0(gsub("\\.for","",allRoutines),"\\("),paste0(gsub("\\.R","",allRoutines),"\\("))
   formatRoutines<-function(routine){
     if (regexpr("\\.for",routine)>0){
       formated<-paste0(gsub("\\.for","",routine),"\\(")
@@ -107,8 +106,6 @@ executionTree<-function(path_main,startRoutine = "runRsparrow.R",
   }
   allRoutines<-unlist(lapply(allRoutines, function(r) formatRoutines(r)))
   
-  #allRoutines[which(regexpr("batch",allRoutines,ignore.case=TRUE)>0 |regexpr("estimateFeval",allRoutines)>0 )]<-
-  #  gsub("\\\\\\(","",allRoutines[which(regexpr("batch",allRoutines,ignore.case=TRUE)>0|regexpr("estimateFeval",allRoutines)>0 )])
   allRoutines<-allRoutines[which(!allRoutines %in% c("batchRun","interactiveBatchRun"))]
 
   
@@ -419,8 +416,7 @@ executionTree<-function(path_main,startRoutine = "runRsparrow.R",
     lineCols<-which(regexpr("line",names(traceProgram))>0)
     traceProgram[, (lineCols) := lapply(.SD, function(x) as.numeric(as.character(x))), .SDcols = lineCols]
     linenames<-which(regexpr("line",names(traceProgram))>0)
-    #strOrder<-paste0("traceProgram[,",linenames,"]",collapse = ",")
-    #strOrder<-paste0("traceProgram<-traceProgram[order(",strOrder,"),]")
+
     strOrder<-paste0("'",names(traceProgram)[linenames],"'")
     strOrder<-paste(strOrder,collapse = ",")
     strOrder<-paste0("setorderv(traceProgram,c(",strOrder,"))")

@@ -33,11 +33,11 @@ validateMetrics <- function(classvar,estimate.list,dlvdsgn,Vsites.list,yieldFact
   class <- array(0,dim=c(nrow=nrow(vsitedata),ncol=length(classvar))) 
   for (k in 1:length(classvar)) { 
     for (i in 1:nrow(vsitedata)) {
-      class[i,k] <- as.numeric(eval(parse(text=paste("vsitedata$",classvar[k],"[",i,"]",sep=""))))
+      class[i,k] <- as.numeric(eval(parse(text=paste0("vsitedata$",classvar[k],"[",i,"]"))))
     } 
   } 
   # contiguous class variables by reach
-  classrch <- as.numeric(eval(parse(text=paste("subdata$",classvar[1],sep=""))))  # used to compute RMSE by class
+  classrch <- as.numeric(eval(parse(text=paste0("subdata$",classvar[1]))))  # used to compute RMSE by class
   
   data <- DataMatrix.list$data
   

@@ -1,0 +1,66 @@
+---
+title: "`r params$rmdTitle`"
+author: ""
+date: "`r paste0('Output on ',format(Sys.time(), '%m-%d-%Y'))`"
+output: html_document
+params:
+  rmdTitle: rmdTitle
+  mapType: mapType
+  mapLoopInput.list: mapLoopInput.list
+  path_outputMapsChild: path_outputMapsChild
+  
+---
+
+
+
+```{r outputMaps, eval=TRUE, echo=FALSE,warning=FALSE, message = FALSE,fig.width=8, fig.height=8}
+#unpack params
+path_outputMapsChild<-params$path_outputMapsChild
+mapType<-params$mapType
+mapLoopInput.list<-params$mapLoopInput.list
+plots<-mapLoopInput.list$plots
+
+
+##########################
+##########################
+#setup for dynamic mapping
+##########################
+##########################
+
+
+print(plots)
+
+
+
+##########################
+##########################
+#end dynamic setup
+##########################
+##########################
+
+#run mapLoopStr
+map_loop.list<-mapLoopStr(mapType,mapLoopInput.list)
+
+
+unPackList(lists = list(map_loop.list = map_loop.list),
+                     parentObj = list(NA))
+
+rmd <- sapply(
+  1:(length(unique(plots$plotKey))),
+  function(i) {
+    knitr::knit_expand(path_outputMapsChild, i = i)
+  }
+)
+rmd <- paste(rmd, collapse = "\n")
+
+```
+
+```{r renderOut, echo=FALSE, results='asis', warning=FALSE, message=FALSE}
+
+rendered <- knitr::knit(text = rmd, quiet = TRUE)
+cat("\n \n")
+cat(rendered, sep = "\n")
+
+
+```
+

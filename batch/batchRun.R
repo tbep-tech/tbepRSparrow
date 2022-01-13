@@ -64,7 +64,7 @@ if (length(res)!=0){
     
     runScript<-"yes"
     runRsparrow<-"yes"
-    sink(file=paste(path_results,.Platform$file.sep,"batchSessionInfo",.Platform$file.sep,run_id,"_log.txt",sep=""),split=TRUE)
+    sink(file=paste0(path_results,.Platform$file.sep,"batchSessionInfo",.Platform$file.sep,run_id,"_log.txt"),split=TRUE)
     cat("\n \n")
     cat("RSPARROW MODEL NAME: ",run_id,sep="")
     cat("\n \n")
@@ -80,7 +80,7 @@ if (length(res)!=0){
     if (load_previousDataImport=="yes"){
       fileName<-strsplit(path_results,.Platform$file.sep)[[1]]
       fileName<-paste(fileName[1:length(fileName)-1],collapse = .Platform$file.sep)
-      fileName<-paste(fileName,.Platform$file.sep,gsub(".csv","",input_data_fileName),"_priorImport",sep="")
+      fileName<-paste0(fileName,.Platform$file.sep,gsub(".csv","",input_data_fileName),"_priorImport")
       #check if file exists
       if (file.exists(fileName)){
         load(file=fileName)  
@@ -104,7 +104,7 @@ if (length(res)!=0){
     
     ###############################################################
     #runRsparrow
-    #source(paste(path_main,.Platform$file.sep,"R",.Platform$file.sep,"startModelRun.R",sep=""))
+
     startModelRun(file.output.list,
                   if_estimate,if_estimate_simulation,
                   if_boot_estimate,if_boot_predict,enable_ShinyApp,
@@ -133,7 +133,7 @@ if (length(res)!=0){
                   RSPARROW_errorOption)
     
     
-    save.image(file=paste(path_results,.Platform$file.sep,"batchSessionInfo",.Platform$file.sep,run_id,".RData",sep=""))
+    save.image(file=paste0(path_results,.Platform$file.sep,"batchSessionInfo",.Platform$file.sep,run_id,".RData"))
 
     
     sink()

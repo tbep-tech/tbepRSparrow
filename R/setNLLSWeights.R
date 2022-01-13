@@ -12,7 +12,10 @@
 #'@param run_id character string control setting indicating the current model name
 #'@param subdata data.frame input data (subdata)
 #'@param sitedata Sites selected for calibration using `subdata[(subdata$depvar > 0
-#'                & subdata$calsites==1), ]`
+#'                & subdata$calsites==1), ]`. The object contains the dataDictionary 
+#'                ‘sparrowNames’ variables, with records sorted in hydrological 
+#'                (upstream to downstream) order (see the documentation Chapter 
+#'                sub-section 5.1.2 for details)
 #'@param data_names data.frame of variable metadata from data_Dictionary.csv file
 #'@param minimum_reaches_separating_sites number indicating the minimum number of reaches 
 #'       separating sites

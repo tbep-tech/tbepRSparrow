@@ -45,20 +45,77 @@ predictScenariosPrep<-function(##Rshiny
   #paths
   file.output.list){
   
+  
   scenarioError<-FALSE
   unPackList(lists = list(file.output.list = file.output.list,
                           scenario.input.list = scenario.input.list),
              parentObj = list(NA,NA)) 
   
+  #get coefficient estimates
+  betalst <- JacobResults$oEstimate
+  beta1<-t(matrix(betalst, ncol=nrow(subdata), nrow=length(betalst)))
+
+  scenarioCoefficients<-data.frame(PARAMETER = JacobResults$Parmnames,
+                                   ESTIMATE = JacobResults$oEstimate,
+                                   PercentChange = rep(0,length(JacobResults$oEstimate)))
+ 
+  if (Rshiny){
+    map_years<-as.character(input$yearSelect)
+    if (length(map_years)!=0 & !map_years[1] %in% c("mean","median","min","max")){
+      map_years<-as.numeric(map_years)
+    }else if (length(map_years)==0){
+      map_years<-NA
+    }
+    map_seasons<-as.character(input$seasonSelect)
+    if (length(map_seasons)==0){
+      map_seasons<-NA
+    }
+    
+    if (length(input$forecast_filename)==0 | input$forecast_filename=="" | input$forecastScenario=="no"){
+      forecast_filename<-NA
+    }else if (input$forecastScenario=="yes"){
+      forecast_filename<-input$forecast_filename
+    }
+    if (length(input$use_sparrowNames)!=0){
+      if (input$use_sparrowNames==FALSE){
+        use_sparrowNames<-FALSE
+      }else{
+        use_sparrowNames<-TRUE
+      }
+    }else{
+      use_sparrowNames<-FALSE
+      }
+  }#Rshiny
+  
+  if (map_years=="all"){
+    map_years<-unique(subdata$year)
+  }
+  if (map_seasons=="all"){
+    map_seasons<-unique(subdata$season)
+  }
+  
+  if (!is.na(forecast_filename)){
+    fData<-readForecast(file.output.list,forecast_filename,data_names,srcvar,use_sparrowNames, batch_mode)
+    scenario_sources<-names(fData)[names(fData)!="waterid"]
+    matchData<-data[which(data[,1] %in% fData$waterid),]
+    fData<-fData[match(matchData[,1],fData$waterid),]
+    for (n in names(fData)[names(fData)!="waterid"]){
+      varIndex<-jsrcvar[srcvar==n]
+      matchData[,varIndex]<-fData[,names(fData)==n]
+    }
+    scenarioFlag<-sapply(data[,1],function(x) ifelse(x %in% fData$waterid,1,0))
+    data[which(data[,1] %in% fData$waterid),]<-matchData
+  }else{#not forecast scenario
+  
   #create scenario_name directory
   options(warn=-1)
-  if (Rshiny==FALSE){
-    if (!dir.exists(paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,sep=""))){
-      dir.create(paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,sep=""))
+  if (!Rshiny){
+    if (!dir.exists(paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name))){
+      dir.create(paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name))
     }#if directory not found
   }else{#Rshiny TRUE
-    if (!dir.exists(paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,input$scenarioName,sep=""))){
-      dir.create(paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,input$scenarioName,sep=""),showWarnings = FALSE)
+    if (!dir.exists(paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,input$scenarioName))){
+      dir.create(paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,input$scenarioName),showWarnings = FALSE)
     }#if direcotry not found
   }#if Rshiny TRUE
   options(warn=0)  
@@ -68,16 +125,16 @@ predictScenariosPrep<-function(##Rshiny
   unPackList(lists = list(datalstCheck = data_names$sparrowNames),
              parentObj = list(subdata = subdata))
   
-  #get coefficient estimates
-  betalst <- JacobResults$oEstimate
-  beta1<-t(matrix(betalst, ncol=nrow(subdata), nrow=length(betalst)))
+  # #get coefficient estimates
+  # betalst <- JacobResults$oEstimate
+  # beta1<-t(matrix(betalst, ncol=nrow(subdata), nrow=length(betalst)))
   
-  scenarioCoefficients<-data.frame(PARAMETER = JacobResults$Parmnames,
-                                   ESTIMATE = JacobResults$oEstimate,
-                                   PercentChange = rep(0,length(JacobResults$oEstimate)))
+  # scenarioCoefficients<-data.frame(PARAMETER = JacobResults$Parmnames,
+  #                                  ESTIMATE = JacobResults$oEstimate,
+  #                                  PercentChange = rep(0,length(JacobResults$oEstimate)))
   
   #convert Rshiny metrics to control setting names 
-  if (Rshiny==TRUE){
+  if (Rshiny){
     scenario_name<-as.character(input$scenarioName)
     scenario_sources<-as.character(input$scenario_sources)
     select_targetReachWatersheds<-as.character(input$target)
@@ -119,12 +176,12 @@ predictScenariosPrep<-function(##Rshiny
       select_targetReachWatersheds<-NA
     }else if (tolower(select_targetReachWatersheds)=="import"){
       #read flag file
-      filein <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,"flag_TargetReachWatersheds.csv",sep="")
+      filein <- paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,"flag_TargetReachWatersheds.csv")
       select_targetReachWatersheds <- fread(filein,header=TRUE,stringsAsFactors=FALSE,
                                             dec = csv_decimalSeparator,sep=csv_columnSeparator)
       
       #save flag file to subdirectory
-      fileout <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_flag_TargetReachWatersheds.csv",sep="")
+      fileout <- paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_flag_TargetReachWatersheds.csv")
       fwrite(select_targetReachWatersheds,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,col.names=TRUE,
              dec = csv_decimalSeparator,sep=csv_columnSeparator,na = "NA")      
       
@@ -140,7 +197,7 @@ predictScenariosPrep<-function(##Rshiny
         
         
         #save flag file to subdirectory
-        fileout <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_flag_TargetReachWatersheds.csv",sep="")
+        fileout <- paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_flag_TargetReachWatersheds.csv")
         fwrite(select_targetReachWatersheds,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,col.names=TRUE,
                dec = csv_decimalSeparator,sep=csv_columnSeparator,na = "NA")
         
@@ -164,8 +221,50 @@ predictScenariosPrep<-function(##Rshiny
   
   ###target reach selection
   if (!is.na(select_targetReachWatersheds[1])){
+    dynamic<-checkDynamic(subdata) 
+    if (dynamic){
+    #   #loop through timesteps
+      if (!is.na(map_years) & !is.na(map_seasons)){
+        subdata_target<-subdata
+        subdata_target$hydseq<-rep(NA,nrow(subdata_target))
+        for (y in map_years){
+          for (s in map_seasons){
+            hydSub<-subdata[subdata$year==y & subdata$season==s,]
+            subdata_target<-subdata_target[subdata_target$year!=y & subdata_target$season!=s,]
+            select_targetWaterIDs<-hydSub[hydSub$mapping_waterid %in% select_targetReachWatersheds,]$waterid_for_RSPARROW_mapping
+            hydSub_target<-hydseqTerm(hydSub, select_targetWaterIDs)
+            subdata_target<-rbind(subdata_target,hydSub_target)
+          }
+        }
+      }else if (!is.na(map_years)){
+        subdata_target<-subdata
+        subdata_target$hydseq<-rep(NA,nrow(subdata_target))
+        for (y in map_years){
+          hydSub<-subdata[subdata$year==y,]
+          subdata_target<-subdata_target[subdata_target$year!=y,]
+          select_targetWaterIDs<-hydSub[hydSub$mapping_waterid %in% select_targetReachWatersheds,]$waterid_for_RSPARROW_mapping
+          hydSub_target<-hydseqTerm(hydSub, select_targetWaterIDs)
+          subdata_target<-rbind(subdata_target,hydSub_target)
+        }
+      }else if (!is.na(map_seasons)){
+        subdata_target<-subdata
+        subdata_target$hydseq<-rep(NA,nrow(subdata_target))
+        for (s in map_seasons){
+          hydSub<-subdata[subdata$season==s,]
+          subdata_target<-subdata_target[subdata_target$season!=s,]
+          select_targetWaterIDs<-hydSub[hydSub$mapping_waterid %in% select_targetReachWatersheds,]$waterid_for_RSPARROW_mapping
+          hydSub_target<-hydseqTerm(hydSub, select_targetWaterIDs)
+          subdata_target<-rbind(subdata_target,hydSub_target)
+        }
+      }
+
+    #   #find all waterids associated with select_targetReachWatershed mapping_waterids
+    #
+     }else{
+     subdata_target<-hydseqTerm(subdata, select_targetReachWatersheds) 
+     }
     
-    subdata_target<-hydseqTerm(subdata, select_targetReachWatersheds)
+    
     subdata_target<-subdata_target[order(match(subdata_target$waterid,subdata$waterid)),]
     reachFlag<-ifelse(!is.na(subdata_target$hydseq),1,0)
     
@@ -189,10 +288,10 @@ predictScenariosPrep<-function(##Rshiny
     }else{#selected reaches
       
       if (!is.na(landuseConversion[i]) & !exists(paste0("S_",scenario_sources[i],"_LC"))){
-        if (Rshiny==TRUE){
+        if (Rshiny){
           eval(parse(text = paste0("S_",scenario_sources[i],"_LC <- ifelse(S_",scenario_sources[i],"!=1,'",landuseConversion[i],"',NA)"))) 
         }
-      }else if (Rshiny==FALSE & exists(paste0("S_",scenario_sources[i],"_LC"))){
+      }else if (!Rshiny & exists(paste0("S_",scenario_sources[i],"_LC"))){
         temp<-eval(parse(text =paste0("S_",scenario_sources[i],"_LC") ))
         
         if (length(unique(temp))==1 & is.na(unique(temp))){
@@ -352,7 +451,7 @@ predictScenariosPrep<-function(##Rshiny
   #if sumarea!=0 where reduction occurs
   errorLU<-any(errorMat[which(sumarea!=0)]!=0)
   
-  if (errorLU==FALSE){
+  if (!errorLU){
     #apply landuse conversions
     testApply<-data
     testApply[,jsrcvar]<-testApply[,jsrcvar]+sumarea
@@ -364,13 +463,13 @@ predictScenariosPrep<-function(##Rshiny
     
   }
   
-  if (errorLU==FALSE & length(LUsourceError)==0 & negTest==FALSE){#apply reductions to data
+  if (!errorLU & length(LUsourceError)==0 & !negTest){#apply reductions to data
     data[,jsrcvar]<-data[,jsrcvar]+sumarea
     data[,jsrcvar]<-data[,jsrcvar]-reducMat  
     
   }
   
-  if (negTest==TRUE){#negative landuse data
+  if (negTest){#negative landuse data
     negTest<-testApply[,jsrcvar]
     negTest<-which(sumarea!=0 & negTest<0,arr.ind = TRUE)
     
@@ -381,13 +480,13 @@ predictScenariosPrep<-function(##Rshiny
     
     colnames(negTest)<-dataNames
     negTest<-subdata[which(subdata$waterid %in% negTest[,1]),]
-    fileout <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_NegativeLanduseFound.csv",sep="")
+    fileout <- paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,scenario_name,.Platform$file.sep,scenario_name,"_",run_id,"_NegativeLanduseFound.csv")
     fwrite(negTest,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,col.names=TRUE,
            dec = csv_decimalSeparator,sep=csv_columnSeparator,na = "NA")
     message("\n \nWARNING : Invalid Landuse Conversion.  Negative landuse data found for ",nrow(negTest)," waterids, saved to \n",fileout)
     
     
-  }else if (any(sumarea!=0) & errorLU==TRUE){#compound reductions
+  }else if (any(sumarea!=0) & errorLU){#compound reductions
     message("\n \nWARNING : Invalid Landuse Conversion.  Compound reductions found.\nNO SCENARIO EXECUTED")
     scenarioError<-TRUE
   }else if (length(LUsourceError)!=0){
@@ -396,7 +495,7 @@ predictScenariosPrep<-function(##Rshiny
     scenarioError<-TRUE
   }
   
-  
+  }#not forecast
   #outputlist
   scenarioPrep.list<-named.list(data,scenario_name,scenario_sources,
                                 select_scenarioReachAreas,select_targetReachWatersheds,

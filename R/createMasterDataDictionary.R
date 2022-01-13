@@ -91,7 +91,7 @@ createMasterDataDictionary<-function(file.output.list,batch_mode){
     }# valid data_names file
     
   }#end for f
-  fwrite(file=paste(dirname(path_results),.Platform$file.sep,"master_dataDictionary.csv",sep=""),master,
+  fwrite(file=paste0(dirname(path_results),.Platform$file.sep,"master_dataDictionary.csv"),master,
          row.names=FALSE, col.names=TRUE,showProgress = FALSE,dec=csv_decimalSeparator,sep=csv_columnSeparator,na = "NA")
   
   

@@ -1,12 +1,15 @@
 ---
-title: 'UpperMissOhio'
+title: "`r params$file.output.list$run_id`"
 author: ""
 date: "`r paste0('Output on ',format(Sys.time(), '%m-%d-%Y'))`"
 output: html_document
 params:
+  file.output.list: file.output.list
   predictMapType: predictMapType
   GeoLines: GeoLines
   plotShape: plotShape
+  dmapfinal: dmapfinal
+  plots: plots
   k: k
   existGeoLines: existGeoLines
   Rshiny: Rshiny
@@ -27,6 +30,7 @@ params:
   lat_limit: lat_limit
   nlty: nlty
   nlwd: nlwd
+  CRStext: CRStext
   mapdataname: mapdataname
   predictionMapColors: predictionMapColors
   add_plotlyVars: add_plotlyVars
@@ -36,6 +40,12 @@ params:
   mapvarname: mapvarname
   predictionClassRounding: predictionClassRounding
   commonvar: commonvar
+  map_years: map_years
+  map_seasons: map_seasons
+  mapsPerPage: mapsPerPage
+  mapPageGroupBy: mapPageGroupBy
+  aggFuncs: aggFuncs
+  path_predictMapsChild: path_predictMapsChild
 ---
 
 ```{r setup, include=FALSE}
@@ -47,6 +57,8 @@ knitr::opts_chunk$set(echo = FALSE,eval=TRUE, echo=FALSE,warning=FALSE, message 
 predictMapType<-params$predictMapType
 GeoLines<-params$GeoLines
 plotShape<-params$plotShape
+dmapfinal<-params$dmapfinal
+plots<-params$plots
 k<-params$k
 existGeoLines<-params$existGeoLines
 Rshiny<-params$Rshiny
@@ -67,6 +79,7 @@ lon_limit<-params$lon_limit
 lat_limit<-params$lat_limit
 nlty<-params$nlty
 nlwd<-params$nlwd
+CRStext<-params$CRStext
 mapdataname<-params$mapdataname
 predictionMapColors<-params$predictionMapColors
 add_plotlyVars<-params$add_plotlyVars
@@ -76,200 +89,65 @@ predictionMapBackground<-params$predictionMapBackground
 LineShapeGeo<-params$LineShapeGeo
 mapvarname<-params$mapvarname
 predictionClassRounding<-params$predictionClassRounding
-
-if (enable_plotlyMaps=="no" | enable_plotlyMaps=="static"){
-  
-}else{#plotlystuff
-  if (mapScenarios==FALSE){
-    titleStr<-paste0(master_map_list[k],"\n",mapunits.list[k])
-  }else{
-    if (Rshiny==FALSE){
-      titleStr<-paste(scenario_name,scenario_map_list[k],"\n",mapunits.list[k],sep=" ")
-    }else{
-      titleStr<-paste(input$scenarioName,master_map_list[k],"\n",mapunits.list[k],sep=" ")
-    }
-  }
-}
-if (enable_plotlyMaps=="yes" | enable_plotlyMaps=="plotly"){
-  #start plotly plot
-  p<-plot_ly() %>%
-    layout(
-      showlegend =TRUE,
-      xaxis = list(range = lon_limit,
-                   showticklabels= TRUE,
-                   title = "Longitude"),
-      yaxis = list(range = lat_limit,
-                   showticklabels = TRUE,
-                   title = "Latitude"),
-      title = titleStr)
-}
-
-if (existGeoLines==TRUE){
-  
-  if (enable_plotlyMaps=="no" | enable_plotlyMaps=="static"){
-    plot(st_geometry(GeoLines),lwd=0.1,xlim=lon_limit,ylim=lat_limit,col = predictionMapBackground)
-  }else if (enable_plotlyMaps=="yes" | enable_plotlyMaps=="plotly"){
-    p <- p %>% add_sf(data = GeoLines,  mode = "lines", type = "scatter",
-                      stroke = I("black"),color = I(predictionMapBackground),
-                      name = LineShapeGeo, hoverinfo = "none")
+map_years<-params$map_years
+map_seasons<-params$map_seasons
+mapsPerPage<-params$mapsPerPage
+mapPageGroupBy<-params$mapPageGroupBy
+aggFuncs<-params$aggFuncs
+path_predictMapsChild<-params$path_predictMapsChild
     
-    
-    
+##########################
+##########################
+#setup for dynamic mapping
+##########################
+##########################
+
+
+print(plots)
+
+
+
+##########################
+##########################
+#end dynamic setup
+##########################
+##########################
+
+#run mapLoopStr
+map_loop.list<-mapLoopStr(file.output.list,predictMapType,GeoLines,
+                     plotShape,dmapfinal,plots,k,
+                     existGeoLines,Rshiny,input,
+                     predictionTitleSize,scenario_name,scenario_map_list,
+                     master_map_list,predictionLegendSize,mapunits.list,predictionLegendBackground,
+                     break1,Mcolors,
+                     enable_plotlyMaps,output_map_type,
+                     lineWidth,lon_limit,lat_limit,nlty,nlwd,CRStext,
+                     mapdataname,predictionMapColors,add_plotlyVars,
+                     mapScenarios,predictionMapBackground,LineShapeGeo,
+                     mapvarname,predictionClassRounding,
+                     commonvar,
+                     map_years,map_seasons,mapsPerPage,mapPageGroupBy,aggFuncs)
+
+
+unPackList(lists = list(map_loop.list = map_loop.list),
+                     parentObj = list(NA))
+
+rmd <- sapply(
+  1:(length(unique(plots$plotKey))),
+  function(i) {
+    knitr::knit_expand(path_predictMapsChild, i = i)
   }
-}
+)
+rmd <- paste(rmd, collapse = "\n")
+
+```
+
+```{r  echo=FALSE, results='asis', warning=FALSE, message=FALSE}
+
+rendered <- knitr::knit(text = rmd, quiet = TRUE)
+cat("\n \n")
+cat(rendered, sep = "\n")
 
 
-
-
-# select the shading colors for a given mapping variable
-
-if (enable_plotlyMaps=="no" | enable_plotlyMaps=="static"){
-  mapvarname <- paste("plotShape$MAPCOLORS",k,sep="")
-  if (existGeoLines==TRUE){
-    if (predictMapType=="stream"){
-      xtext <- paste("plot(st_geometry(plotShape),col=",mapvarname,",lwd=lineWidth, add=TRUE)",sep="")
-    }else{#catchment
-      xtext <- paste("plot(st_geometry(plotShape),col=",mapvarname,",lwd=0.01, lty=0, add=TRUE)",sep="")
-    }
-    eval(parse(text=xtext))
-  } else {
-    if (predictMapType=="stream"){
-      xtext <- paste("plot(st_geometry(plotShape),col=",mapvarname,",lwd=lineWidth,bg = predictionMapBackground)",sep="")
-    }else{#catchment
-      xtext <- paste("plot(st_geometry(plotShape),col=",mapvarname,",lwd=0.01, lty=0,bg = predictionMapBackground)",sep="")
-    }
-    eval(parse(text=xtext))
-  }
-}else if (enable_plotlyMaps=="yes" | enable_plotlyMaps=="plotly"){#plotly
-  mapvarname <- paste("MAPCOLORS",k,sep="")
-  suppressWarnings(remove(list = c(add_plotlyVars)))
-  uniqueCols<-eval(parse(text = paste0("as.character(unique(plotShape$",mapvarname,"))")))
-  uniqueCols<-Mcolors[Mcolors %in% uniqueCols]
-  for (c in uniqueCols){
-    plotShape$mapColor<-eval(parse(text = paste0("plotShape$",mapvarname)))
-    mapdata<-plotShape[plotShape$mapColor==c,]
-    mapdata$mapdataname<-eval(parse(text = paste0("mapdata$",mapdataname)))   
-    
-
-    lineText<-"~paste('</br> ',master_map_list[k],' :',
-                   round(mapdataname,predictionClassRounding)"
-    
-    lineText<-addMarkerText(lineText,add_plotlyVars,mapdata, mapdata)$markerText
-
-    if (predictMapType=="stream"){
-      p <- p %>% add_sf(data = mapdata, mode = "lines", type = "scatter",
-                        color = I(c),
-                        name = break1[k][[1]][uniqueCols==c],
-                        line = list(width = lineWidth),
-                        hoverinfo = 'text',
-                        text = eval(parse(text = lineText)))
-    }else{#catchment
-      p <- p %>% add_sf(data = mapdata[1,],  
-                        type = "scatter", mode = "lines",
-                        # color = toRGB(c),
-                        opacity = 1,fillcolor = toRGB(c),
-                        line = list(color = toRGB(c),width = 0.8, opacity = 1),
-                        name = break1[k][[1]][uniqueCols==c],
-                        hoverinfo = 'text',
-                        split = eval(parse(text = paste0("~",commonvar))),
-                        hoveron = "fills",
-                        legendgroup = c,
-                        text = eval(parse(text = lineText)),
-                        showlegend = TRUE)
-      p <- p %>% add_sf(data = mapdata[2:nrow(mapdata),],  
-                        type = "scatter", mode = "lines",
-                        # color = toRGB(c),
-                        opacity = 1,fillcolor = toRGB(c),
-                        line = list(color = toRGB(c),width = 0.8, opacity = 1),
-                        hoverinfo = 'text',
-                        split = eval(parse(text = paste0("~",commonvar))),
-                        hoveron = "fills",
-                        legendgroup = c,
-                        text = eval(parse(text = lineText)),
-                        showlegend = FALSE)
-    }
-  }
-}else{#leaflet
-  mapvarname <- paste("MAPCOLORS",k,sep="")
-  suppressWarnings(remove(list = c(add_plotlyVars)))
-  uniqueCols<-eval(parse(text = paste0("as.character(unique(plotShape$",mapvarname,"))")))
-  uniqueCols<-Mcolors[Mcolors %in% uniqueCols]
-  plotShape$mapColor<-eval(parse(text = paste0("plotShape$",mapvarname)))
-  mapdata<-plotShape
-  mapdata$mapdataname<-eval(parse(text = paste0("mapdata$",mapdataname)))     
-  
-  lineText<-"~paste('</br> ',master_map_list[k],' :',
-                   round(mapdataname,predictionClassRounding)"
-  
-  lineText<-addMarkerText(lineText,add_plotlyVars,mapdata, mapdata)$markerText
-
-  #lineTextHTML<-paste0("lapply(",lineText,", HTML)")
-        lineText<-gsub("~","",lineText)
-      
-      
-      lineTextHTML<-paste0("~lapply(",lineText,",HTML)")
-  mapdata<-st_transform(mapdata, crs = 4326)
-  mapdata<-st_zm(mapdata, drop = T, what = "ZM")
-  if (predictMapType=="stream"){
-    p <- mapview(mapdata, fill = F, homebutton = F, popup = NULL, legend = F, viewer.suppress = F) %>% 
-      .@map %>% 
-      clearMarkers() %>% 
-      clearShapes() %>% 
-      addPolylines(
-        data = mapdata, 
-        opacity = 1,
-        weight = lineWidth,
-        color = ~col2hex(mapColor),
-        label = eval(parse(text = lineTextHTML))
-      ) %>% 
-      addLegend("bottomleft", labels = break1[k][[1]], colors = col2hex(uniqueCols),
-                title = titleStr, opacity = 1)
-  }else{#catchment
-    p <- mapview(mapdata, fill = F, homebutton = F, popup = NULL, legend = F, viewer.suppress = F) %>% 
-      .@map %>% 
-      clearMarkers() %>% 
-      clearShapes() %>% 
-      addPolygons(
-        data = mapdata, 
-        stroke = T, 
-        color = 'grey', 
-        weight = 1, 
-        layerId = ~waterid, 
-        fillColor = ~col2hex(mapColor),
-        fillOpacit = 0.9,
-        label = eval(parse(text = lineTextHTML))
-      ) %>% 
-      addLegend("bottomleft", labels = break1[k][[1]], colors = col2hex(uniqueCols),
-                title = titleStr, opacity = 1)
-    
-  }
-}#end leaflet
-# if (enable_plotlyMaps!="no" & enable_plotlyMaps!="static"){
-# p
-# 
-# }
-
-
-if (enable_plotlyMaps=="no" | enable_plotlyMaps=="static"){
-  if (mapScenarios==FALSE){
-    title(master_map_list[k],cex.main = predictionTitleSize)
-  }else{
-    if (Rshiny==FALSE){
-      title(paste(scenario_name,scenario_map_list[k],sep=" "))
-    }else{
-      title(paste(input$scenarioName,master_map_list[k],sep=" "),cex.main = predictionTitleSize) 
-    }
-  }
-  
-  
-  
-  legend("bottomleft",break1[k][[1]],lty=nlty,cex=predictionLegendSize,title=mapunits.list[k],
-         bg=predictionLegendBackground,lwd=nlwd, col=Mcolors[1:length(break1[k][[1]])], bty="o")
-  
-  
-  
-}else{
-  p
-}
-
+```
 

@@ -41,7 +41,10 @@
 #'       `ifelse((parmMax > 0 | (parmType=="DELIVF" & parmMax>=0)) & (parmMin<parmMax) & ((parmType=="SOURCE" & 
 #'       parmMin>=0) | parmType!="SOURCE")`
 #'@param sitedata Sites selected for calibration using `subdata[(subdata$depvar > 0
-#'                & subdata$calsites==1), ]`
+#'                & subdata$calsites==1), ]`. The object contains the dataDictionary 
+#'                ‘sparrowNames’ variables, with records sorted in hydrological 
+#'                (upstream to downstream) order (see the documentation Chapter 
+#'                sub-section 5.1.2 for details)
 #'@param estimate.list list output from `estimate.R`
 #'@param ConcFactor the concentration conversion factor, computed as Concentration = load / 
 #'       discharge * ConcFactor
@@ -104,6 +107,7 @@ shinyMap2<-function(
   suppressWarnings(suppressMessages(library(magrittr)))
   suppressWarnings(suppressMessages(library(gplots)))
   suppressWarnings(suppressMessages(library(ggplot2)))
+  suppressWarnings(suppressMessages(library(gridExtra)))
   
   unPackList(lists = list(file.output.list = file.output.list,
                           scenario.input.list = scenario.input.list,
@@ -111,14 +115,14 @@ shinyMap2<-function(
              parentObj = list(NA,NA, NA)) 
   
   #load predicitons if available
-  if (file.exists(paste(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predict.list",sep=""))){
-    load(paste(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predict.list",sep=""))
+  if (file.exists(paste0(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predict.list"))){
+    load(paste0(path_results,.Platform$file.sep,"predict",.Platform$file.sep,run_id,"_predict.list"))
   }
   
   #estimation objects
-  if (file.exists(paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_JacobResults",sep=""))){
+  if (file.exists(paste0(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_JacobResults"))){
     if (!exists("JacobResults")){
-      load(paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_JacobResults",sep=""))
+      load(paste0(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_JacobResults"))
     }
   }
   
@@ -131,8 +135,8 @@ shinyMap2<-function(
   
   #map type choices
   if (exists("predict.list") & exists("JacobResults")){
-    mapTypeChoices<-c("","Stream","Catchment","Site Attributes","Source Change Scenarios")
-    selectSources<-as.character(JacobResults$Parmnames[which(JacobResults$btype=="SOURCE")])
+    mapTypeChoices<-c("","Stream","Catchment","Site Attributes","Scenarios for Changes in Sources and/or Delivery Variables (e.g., Climate, Land use)")
+    selectSources<-as.character(JacobResults$Parmnames[which(JacobResults$btype %in% c("SOURCE","DELIVF"))])
     
     
   }else{
@@ -140,6 +144,17 @@ shinyMap2<-function(
     selectSources<-""
   }
   
+  if ("year" %in% data_names$sparrowNames){
+    yearChoices<-c("mean","median","min","max",unique(subdata$year))
+  }else{
+    yearChoices<-c("")
+  }
+  
+  if ("season" %in% data_names$sparrowNames){
+    seasonChoices<-c("mean","median","min","max",unique(subdata$season))
+  }else{
+    seasonChoices<-c("")
+  }
   
   scenarioRtables<-createRTables(selectSources,data_names,mapping.input.list)
   
@@ -151,7 +166,7 @@ shinyMap2<-function(
     fluidPage(tags$head(
       tags$style("h5{color: red}")),
       titlePanel(
-        h1(paste("RShiny Decision Support System : ",run_id,sep=""),h5(div(HTML("DO NOT CLICK ON ITEMS ABOVE THIS POINT!"))))),
+        h1(paste0("RShiny Decision Support System : ",run_id),h5(div(HTML("DO NOT CLICK ON ITEMS ABOVE THIS POINT!"))))),
       
       sidebarLayout(
         sidebarPanel(width=6,
@@ -166,6 +181,28 @@ shinyMap2<-function(
                      selectInput("mapType","Map Type",mapTypeChoices),
                      
                      
+                     conditionalPanel("input.mapType!='Scenarios for Changes in Sources and/or Delivery Variables (e.g., Climate, Land use)'",
+                     h5(HTML("<font color = 'black'><strong>Dynamic Mapping Settings</strong></font>"))),
+                     conditionalPanel("input.mapType=='Scenarios for Changes in Sources and/or Delivery Variables (e.g., Climate, Land use)'",
+                                      h5(HTML("<font color = 'black'><strong>Dynamic Mapping Display Settings</strong></font>")),
+                                      h6("For 'Change Scenarios', the 'year' and/or 'season' selection(s) refer to MAPPING DISPLAY ONLY. To display the mapped results of a change scenario, select a timestep (year and/or season) that is consistent with the user-specified changes in base or reference conditions; the changes can be input from an external forecasting .csv file or expressed as a percentage change in conditions using menu options below). Additional year(s) and/or season(s) may be selected for display to compare historical results with those for the change scenario simulations of model predictions.")),
+                      fluidRow(dropdownButton(circle = FALSE,
+                                      label = "year(s)",
+                                      inputId = "yearDrop",
+                                      checkboxGroupInput("yearSelect", "Select year(s) to Map", 
+                                                         yearChoices,
+                                                         selected = as.character(mapping.input.list$map_years),
+                                                         inline=FALSE)),
+                     dropdownButton(circle = FALSE,
+                                    label = "season(s)",
+                                    inputId = "seasonDrop",
+                                    checkboxGroupInput("seasonSelect", "Select season(s) to Map", 
+                                                       seasonChoices,
+                                                       selected = as.character(mapping.input.list$map_seasons),
+                                                       inline=FALSE)),
+                      ),
+                     
+                     br(),
                      
                      #Stream and Catchment arguments
                      streamCatch("nsStreamCatch", input, choices, map_uncertainties,sitedata,add_plotlyVars),
@@ -179,7 +216,7 @@ shinyMap2<-function(
                      #output shape file ifBatch
                      shapeFunc("nsBatch",input),
                      
-                     # actionButton("showInput","Show Input"),
+
                      conditionalPanel(
                        condition = "input.batch=='Interactive'",
                        fluidRow(
@@ -219,7 +256,7 @@ shinyMap2<-function(
           updateSelectInput(session,"enablePlotly","Output Map Format",c("static","leaflet"),selected = "static")
           output$plotlyExplanation<-renderText({"Plotly not available for catchment maps in Interactive mode due to long processing time\n to get interactive catchment maps select Batch mode and enable plotly"
           })
-        }else if (input$mapType=="Source Change Scenarios"){
+        }else if (grepl("Scenarios",input$mapType)){
           if (length(input$`nsScenarios-outType`)==0){
             updateSelectInput(session,"enablePlotly","Output Map Format",c("static","plotly","leaflet"),selected = currentSelect)
             output$plotlyExplanation<-renderText({"Plotly Maps will take longer to render in Interactive mode"})
@@ -261,8 +298,8 @@ shinyMap2<-function(
                                      variable = c("ratio_total","ratio_inc","percent_total","percent_inc"),
                                      definition = c("Ratio of the changed total load to the baseline (unchanged) total load",
                                                     "Ratio of the changed incremental load to the baseline (unchanged) incremental load"))
-            choices$category<-ifelse(choices$category=="Load Predictions","Load Predictions for Changed Sources",
-                                     ifelse(choices$category=="Yield Predictions","Yield Predictions for Changed Sources",choices$category))
+            choices$category<-ifelse(choices$category=="Load Predictions","Load Predictions for Changed Model Variables",
+                                     ifelse(choices$category=="Yield Predictions","Yield Predictions for Changed Model Variables",choices$category))
             choicesScen<-rbind(choicesScen,ratioChoices)
             
             lapply(1:length(as.character(unique(choicesScen$category))), function(c) {
@@ -291,8 +328,8 @@ shinyMap2<-function(
                                    variable = c("ratio_total","ratio_inc","percent_total","percent_inc"),
                                    definition = c("Ratio of the changed total load to the baseline (unchanged) total load",
                                                   "Ratio of the changed incremental load to the baseline (unchanged) incremental load"))
-          choices$category<-ifelse(choices$category=="Load Predictions","Load Predictions for Changed Sources",
-                                   ifelse(choices$category=="Yield Predictions","Yield Predictions for Changed Sources",choices$category))
+          choices$category<-ifelse(choices$category=="Load Predictions","Load Predictions for Changed Model Variables",
+                                   ifelse(choices$category=="Yield Predictions","Yield Predictions for Changed Model Variables",choices$category))
           choicesScen<-rbind(choicesScen,ratioChoices)
           callModule(updateVariable,"nsScenarios", choices= choicesScen, mapType = input$mapType)
         }
@@ -303,7 +340,7 @@ shinyMap2<-function(
       
       
       observe({
-        if (input$mapType %in% c("Source Change Scenarios")){
+        if (grepl("Scenarios",input$mapType)){
           callModule(shinyScenariosMod,"nsScenarios",scenarioRtables,path_results,scenario.input.list, mapping.input.list)
           
         }else if (input$mapType %in% c("Stream","Catchment")){
@@ -343,6 +380,7 @@ shinyMap2<-function(
           #test bad Settings
           badSettings<-as.data.frame(matrix(0,ncol=4,nrow=0))
           names(badSettings)<-c("Setting","CurrentValue","Type","Test")
+
           errMsg<-NA
           if (input$mapType %in% c("Stream","Catchment")){
             badSettings<-testCosmetic(input, output, session, DF = as.data.frame(scenarioRtables$cosmeticPred),mapType =input$mapType,
@@ -368,7 +406,6 @@ shinyMap2<-function(
             
           }
           
-
           currentP<-goShinyPlot(input, output, session, choices,"goPlot", badSettings,errMsg,
                       file.output.list,map_uncertainties,BootUncertainties,
                       data_names,mapping.input.list,
@@ -386,6 +423,7 @@ shinyMap2<-function(
                       #batchError
                       batch_mode,
                       RSPARROW_errorOption)
+
           
           #print plot size
           env <- environment()
@@ -398,12 +436,13 @@ shinyMap2<-function(
           
 
           if (input$enablePlotly=="static"){ 
+            
             output$plot<-renderUI({
               plotOutput("plotOne", width=900,height=900) %>% withSpinner(color="#0dc5c1")
             })
             #time plot render
             output$plotOne  <- renderPlot({
-              isolate(currentP)
+              grid.arrange(currentP)
             })
 
             
@@ -433,7 +472,9 @@ shinyMap2<-function(
 
         
         observe({
-          p1()
+
+            p1()
+
         })
 
 
@@ -444,7 +485,7 @@ shinyMap2<-function(
         
         
       #pdf output
-      #observeEvent(input$savePDF, {
+
         p2<-eventReactive(input$savePDF, {
           #test bad Settings
         badSettings<-as.data.frame(matrix(0,ncol=4,nrow=0))
@@ -497,13 +538,12 @@ shinyMap2<-function(
 
          p2()
 
-#try(dev.off(), silent = TRUE)
+
         })
         
       
       #batchplot
         p3<-eventReactive(input$batchPlot, {
-     # observeEvent(input$batchPlot, {
         #test bad Settings
         badSettings<-as.data.frame(matrix(0,ncol=4,nrow=0))
         names(badSettings)<-c("Setting","CurrentValue","Type","Test")

@@ -20,7 +20,7 @@ readDesignMatrix <- function(file.output.list,betavalues,batch_mode){
   unPackList(lists = list(file.output.list = file.output.list),
              parentObj = list(NA)) 
   
-  filed <- paste(path_results,run_id,"_design_matrix.csv",sep="")
+  filed <- paste0(path_results,run_id,"_design_matrix.csv")
   
   #columns for DELIVF
   NAMES<-betavalues[which(betavalues$parmType=="DELIVF"),]$sparrowNames

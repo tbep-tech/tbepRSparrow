@@ -38,7 +38,7 @@ verifyDemtarea<-function(if_verify_demtarea,data1,compareData,
     # Select reaches to be included in the analysis (exclude coastal shorelines)
     # NAs removed first or will create NA records in 'sub1'
     for (c in c("termflag","fnode","tnode","demiarea","demtarea")){
-      eval(parse(text = paste("data1$",c,"<-ifelse(is.na(data1$",c,"),0,data1$",c,")",sep="")))
+      eval(parse(text = paste0("data1$",c,"<-ifelse(is.na(data1$",c,"),0,data1$",c,")")))
     }
     
     sub1 <- data1[(data1$fnode > 0 & data1$tnode > 0 & data1$termflag != 3), ]
@@ -54,7 +54,7 @@ verifyDemtarea<-function(if_verify_demtarea,data1,compareData,
     demtarea_new <- demtarea
     hydseq_new <- hydseq
     headflag_new <- headflag
-    name1 <- paste("hs_data <- data.frame(waterid,demtarea_new,hydseq_new,headflag_new)",sep="")
+    name1 <- paste0("hs_data <- data.frame(waterid,demtarea_new,hydseq_new,headflag_new)")
     eval(parse(text=name1))
     hs_data <- hs_data[hs_data$waterid != 0, ] # eliminate 0 cases where vector dimension max > no. reaches
     sub1 <- merge(sub1,hs_data,by="waterid",all.y=TRUE,all.x=TRUE)
@@ -69,8 +69,8 @@ verifyDemtarea<-function(if_verify_demtarea,data1,compareData,
     DAreaFailCheckObj <- sub1[(sub1$AreaRatio_NewOld < 0.99 | sub1$AreaRatio_NewOld > 1.01), ]
     if(nrow(DAreaFailCheckObj) > 0) {
       DAreaFailCheckMessage <- 
-        paste("Number of reaches with different (>1%) total drainage areas (see records in DAreaFailCheckObj): ",
-              nrow(DAreaFailCheckObj),sep="")
+        paste0("Number of reaches with different (>1%) total drainage areas (see records in DAreaFailCheckObj): ",
+              nrow(DAreaFailCheckObj))
       
     }else{
       DAreaFailCheckMessage<-" "

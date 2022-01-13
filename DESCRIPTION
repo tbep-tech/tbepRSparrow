@@ -9,50 +9,51 @@ Description: Setup and execution of the USGS SPARROW water-quality model for a u
 Roxygen: list(markdown=TRUE)
 VignetteBuilder: knitr
 Depends:
-    R(>= 3.6.3),
+    R(>= 4.0.3),
     methods
 Imports:
-    car (>= 3.0-8),
-    data.table (>= 1.12.8),
-    data.tree (>= 0.7.11),
-    dplyr (>= 1.0.0),
+    car (>= 3.0-10),
+    data.table (>= 1.13.2),
+    data.tree (>= 1.0.0),
+    dplyr (>=  1.0.2),
     evaluate (>= 0.14),
     formatR (>= 1.7),
     gear (>= 0.3.4),
     ggplot2 (>= 3.3.2),
-    gplots (>= 3.0.3),
+    gplots (>=  3.1.0),
+    gridExtra (>= 2.3),
     highr (>= 0.8),
     htmltools (>= 0.5.0),
-    htmlwidgets (>= 1.5.1),
-    inline (>= 0.3.15),
-    knitr (>= 1.29),
+    htmlwidgets (>= 1.5.2),
+    inline (>= 0.3.16),
+    knitr (>= 1.30),
     leaflet (>= 2.0.3),
     leaflet.extras (>= 1.0.0),
     magrittr (>= 1.5),
-    maptools (>= 1.0-1),
-    mapview (>= 2.7.8),
+    maptools (>= 1.0-2),
+    mapview (>= 2.9.0),
     markdown (>= 1.1),
     nlmrt (>= 2016.3.2),
     numDeriv (>= 2016.8-1.1),
-    OpenMx (>= 2.17.4),
+    OpenMx (>= 2.18.1),
     plotly (>= 4.9.2.1),
     plyr (>= 1.8.6),
-    rgdal (>= 1.5-10),
+    rgdal (>= 1.5-18),
     rhandsontable (>= 0.3.7),
-    rmarkdown (>= 2.3),
-    roxygen2 (>= 7.1.0),
-    rstan (>= 2.19.3),
+    rmarkdown (>= 2.5),
+    roxygen2 (>= 7.1.1),
+    rstan (>= 2.21.2),
     rstudioapi (>= 0.11),
-    sf (>= 0.9-4),
-    shiny (>= 1.4.0.2),
-    shinycssloaders (>= 0.3),
-    shinyWidgets (>= 0.5.3),
-    sp (>= 1.4-2),
-    spdep (>= 1.1-3),
+    sf (>= 0.9-6),
+    shiny (>= 1.5.0),
+    shinycssloaders (>= 1.0.0),
+    shinyWidgets (>= 0.5.4),
+    sp (>= 1.4-4),
+    spdep (>= 1.1-5),
     stringr (>= 1.4.0),
     svDialogs (>= 1.0.0),
     svGUI (>= 1.0.0),
-    tools (>= 4.0.2)
+    tools (>= 4.0.3)
 Suggests:
     testthat
 License: GPL (>= 2)
@@ -172,6 +173,7 @@ Collate:
     'selectValidationSites.R'
     'setMapDefaults.R'
     'setNLLSWeights.R'
+    'setupDynamicMaps.R'
     'setupMaps.R'
     'shapeFunc.R'
     'shinyErrorTrap.R'
@@ -185,6 +187,7 @@ Collate:
     'streamCatch.R'
     'sumIncremAttributes.R'
     'syncVarNames.R'
+    'test_addPlotlyvars.R'
     'testCosmetic.R'
     'testRedTbl.R'
     'testSettings.R'

@@ -50,7 +50,7 @@ if (length(res)!=0){
   polyShape <- sf::st_read(paste0(path_gis,"/",polyShapeName,".shp"), quiet = TRUE)
   polyShape<-st_transform(polyShape,CRS(CRStext))
   
-  objfile <- paste(path_gis,.Platform$file.sep,"polyShape",sep="")
+  objfile <- paste0(path_gis,.Platform$file.sep,"polyShape")
   save(polyShape,file=objfile)
   
   

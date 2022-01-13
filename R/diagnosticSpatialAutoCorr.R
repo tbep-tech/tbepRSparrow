@@ -12,7 +12,10 @@
 #'@param classvar character vector of user specified spatially contiguous discrete 
 #'       classification variables from sparrow_control.  First element is reach classification variable.
 #'@param sitedata Sites selected for calibration using `subdata[(subdata$depvar > 0
-#'                & subdata$calsites==1), ]`
+#'                & subdata$calsites==1), ]`. The object contains the dataDictionary 
+#'                ‘sparrowNames’ variables, with records sorted in hydrological 
+#'                (upstream to downstream) order (see the documentation Chapter 
+#'                sub-section 5.1.2 for details)
 #'@param numsites number of sites selected for calibration
 #'@param estimate.list list output from `estimate.R`
 #'@param estimate.input.list named list of sparrow_control settings: ifHess, s_offset, 
@@ -43,22 +46,13 @@ diagnosticSpatialAutoCorr <- function(file.output.list,classvar,sitedata,numsite
   # transfer required variables to global environment from 'DataMatrix.list$data.index.list'
   unPackList(lists = list(file.output.list = file.output.list),
              parentObj = list(NA))
-  filename <- paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_diagnostic_spatialautocor.html",sep="")
+  filename <- paste0(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_diagnostic_spatialautocor.html")
   
   path_masterFormat <- file_path_as_absolute(paste0(path_master,"diagnosticSpatialAutoCorr.R"))
   path_masterFormat<-gsub("diagnosticSpatialAutoCorr.R","",path_masterFormat)
   
   reportPath<-paste0(path_master,"diagnosticSpatialAutoCorr.Rmd")
-  #edit title of report
-  reportTitle<-paste(run_id,"_diagnostic_spatialautocorr",sep="")
-  #read Rmd file as text
-  x <- readLines(reportPath)
-  #find where title is designated
-  editthis<-x[which(regexpr("title:",gsub(" ","",x))>0)]
-  #replace with current reportTitle
-  y <- gsub( editthis, paste0("title: '",reportTitle,"'"), x )
-  #overwrite the file
-  cat(y, file=reportPath, sep="\n") 
+
   
   rmarkdown::render(paste0(path_master,"diagnosticSpatialAutoCorr.Rmd"),
                     params = list(
@@ -96,7 +90,7 @@ diagnosticSpatialAutoCorr <- function(file.output.list,classvar,sitedata,numsite
   unPackList(lists = list(saveList = saveList),
              parentObj = list(NA))
   
-  filename <- paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_diagnostic_spatialautocor.txt",sep="")
+  filename <- paste0(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,run_id,"_diagnostic_spatialautocor.txt")
   sink(file=filename,split="FALSE",append=FALSE)
   
   print(outcharfun("MORAN'S I EUCLIDEAN AND HYDROLOGIC DISTANCE WEIGHTED RESULTS"))

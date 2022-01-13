@@ -1,5 +1,5 @@
 ---
-title: 'interactive_2020.06.26_diagnostic_spatialautocorr'
+title: "`r paste0(params$file.output.list$run_id,'_diagnostic_spatialautocorr')`"
 author: ""
 date: "`r paste0('Generated: ',format(Sys.time(), '%m-%d-%Y'))`"
 output: html_document
@@ -75,7 +75,7 @@ nstas <- sum(ifelse(data[,jdepvar] > 0,1,0))  # jdepvar site load index
 class <- array(0,dim=c(nrow=nrow(sitedata),ncol=length(classvar))) 
 for (k in 1:length(classvar)) { 
   for (i in 1:nrow(sitedata)) {
-    class[i,k] <- as.numeric(eval(parse(text=paste("sitedata$",classvar[k],"[",i,"]",sep=""))))
+    class[i,k] <- as.numeric(eval(parse(text=paste0("sitedata$",classvar[k],"[",i,"]"))))
   } 
 }
 
@@ -100,10 +100,7 @@ strExplanation<-paste("
 ```  
 
 ```{r  echo=FALSE, results='asis', eval=TRUE}
-# title<-paste(run_id,"_diagnostic_spatialautocor.pdf Document Contents",sep="")
-# 
-# title<-paste("#",title,"\n")
-# cat(title,"##Document Contents ",strExplanation,sep="\n")
+
 cat("## Document Contents ",strExplanation,sep="\n")
 ```
 
@@ -232,18 +229,18 @@ Fn<-ecdf(sdist)
 y<-Fn(sdist)
 plotData<-data.frame(sdist=sdist, y = y)
 plotData<-plotData[order(plotData$sdist),]
-p<-plotlyLayout(plotData$sdist,plotData$y, log = "", nTicks = 7, digits = 0,
+plotlyLayout(plotData$sdist,plotData$y, log = "", nTicks = 7, digits = 0,
                 xTitle = "Distance Between Sites", xZeroLine = FALSE,xminTick = 0,
                 yTitle = "Fn(x)",  yZeroLine = FALSE,ymax = 1,ymin = 0,ymaxTick = 1,
                 plotTitle = "Station Hydrologic Distances",
-                legend = FALSE,showPlotGrid = showPlotGrid)
+                legend = FALSE,showPlotGrid = showPlotGrid) %>%
 
-p<- p %>% add_trace(x  = plotData$sdist, y = plotData$y,type="scatter",mode="lines",color=I('black'),
-                    line = list(color=I('black')))
-p<-p %>% layout(shapes = list(hline(1, color = "black", dash = 'dash'),
+add_trace(x  = plotData$sdist, y = plotData$y,type="scatter",mode="lines",color=I('black'),
+                    line = list(color=I('black'))) %>%
+layout(shapes = list(hline(1, color = "black", dash = 'dash'),
                               hline(0, color = "black",dash = 'dash')))
 
-p
+
 ```
 
 ```{r pagebreak0, results='asis', echo=FALSE}
@@ -347,18 +344,18 @@ Fn<-ecdf(edist)
 y<-Fn(edist)
 plotData<-data.frame(edist=edist, y = y)
 plotData<-plotData[order(plotData$edist),]
-p<-plotlyLayout(plotData$edist,plotData$y, log = "", nTicks = 7, digits = 0,
+plotlyLayout(plotData$edist,plotData$y, log = "", nTicks = 7, digits = 0,
                 xTitle = "Distance Between Sites", xZeroLine = FALSE,xminTick = 0,
                 yTitle = "Fn(x)",  yZeroLine = FALSE,ymax = 1,ymin = 0,ymaxTick = 1,
                 plotTitle = "Station Euclidean Distances (kilometers)",
-                legend = FALSE,showPlotGrid = showPlotGrid)
+                legend = FALSE,showPlotGrid = showPlotGrid) %>%
 
-p<- p %>% add_trace(x  = plotData$edist, y = plotData$y,type="scatter",mode="lines",color=I('black'),
-                    line = list(color = I('black')))
-p<-p %>% layout(shapes = list(hline(1, color = "black", dash = 'dash'),
+add_trace(x  = plotData$edist, y = plotData$y,type="scatter",mode="lines",color=I('black'),
+                    line = list(color = I('black'))) %>%
+layout(shapes = list(hline(1, color = "black", dash = 'dash'),
                               hline(0, color = "black",dash = 'dash')))
 
-p
+
 ```
 
 ```{r pagebreak1, results='asis', echo=FALSE}
@@ -605,7 +602,7 @@ moranOut <- data.frame(pmoran,pmoran_dev)
 rownames(moranOut) <- c(" ") 
 colnames(moranOut) <- c(" Moran's P-Value"," Moran's Standard Deviate")
 
-xtext <- paste("  Fraction of sites that are nested:  ",round(nest_sites,digits=3),sep="")
+xtext <- paste0("  Fraction of sites that are nested:  ",round(nest_sites,digits=3))
 
 
 ################################################################################
@@ -759,8 +756,8 @@ if(!is.na(classvar[1]) & (classvar[1] != "sitedata.demtarea.class")) {   # proce
 class_sigmoran <- data.frame(cind,nmrbout,pmoran,pmoran_dev)
 colnames(class_sigmoran) <- c(cindLabel," Number Stations"," Moran's P-Value"," Moran's Standard Deviate")
 
-fileCSV<-paste(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,"summaryCSV",.Platform$file.sep,sep="")
-fileout<-paste(fileCSV,"EuclideanMoransI.csv",sep="")
+fileCSV<-paste0(path_results,.Platform$file.sep,"estimate",.Platform$file.sep,"summaryCSV",.Platform$file.sep)
+fileout<-paste0(fileCSV,"EuclideanMoransI.csv")
 fwrite(class_sigmoran,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
        dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
 

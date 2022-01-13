@@ -159,7 +159,7 @@ estimateBootstraps <- function(iseed,biters,estimate.list,
   # store bootstrap parameter estimates in object as list and save
   
   BootResults <- named.list(bEstimate,bootmean_exp_weighted_error,boot_resids,boot_lev)
-  objfile <- paste(path_results,"estimate",.Platform$file.sep,run_id,"_BootBetaest",sep="")
+  objfile <- paste0(path_results,"estimate",.Platform$file.sep,run_id,"_BootBetaest")
   save(BootResults,file=objfile)
   assign("BootResults",BootResults,envir = .GlobalEnv)
   
@@ -172,7 +172,7 @@ estimateBootstraps <- function(iseed,biters,estimate.list,
   }
   headlist[i+2] <- "bootmean_exp_weighted_error"
   colnames(outvars) <- headlist
-  fileout <- paste(path_results,"estimate",.Platform$file.sep,run_id,"_bootbetaest.csv",sep="")
+  fileout <- paste0(path_results,"estimate",.Platform$file.sep,run_id,"_bootbetaest.csv")
   fwrite(outvars,file=fileout,row.names=F,append=F,quote=F,showProgress = FALSE,
          dec = csv_decimalSeparator,sep=csv_columnSeparator,col.names = TRUE,na = "NA")
   

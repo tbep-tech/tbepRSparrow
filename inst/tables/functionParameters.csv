@@ -234,7 +234,7 @@ siteAttrColors,"character vector control setting of colors to use in site attrib
 siteAttrLegendSize,numeric control setting used as a scaling factor for the legend size on site attribute maps
 siteAttrMapBackground,character string control setting used to set background color of site attribute maps
 siteAttrTitleSize,numeric control setting used as a scaling factor for the title size on site attribute maps
-sitedata,"Sites selected for calibration using `subdata[(subdata$depvar > 0  & subdata$calsites==1), ]`"
+sitedata,"Sites selected for calibration using `subdata[(subdata$depvar > 0 & subdata$calsites==1), ]`. The object contains the dataDictionary ‘sparrowNames’ variables, with records sorted in hydrological (upstream to downstream) order  (see the documentation Chapter sub-section 5.1.2 for details)"
 sitedata.demtarea.class,Total drainage area classification variable for calibration sites.
 sitedata.landuse,Land use for incremental basins for diagnostics.
 sourceData,data.frame with additional variables to be added to plot data for hover text

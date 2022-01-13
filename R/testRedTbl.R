@@ -14,6 +14,7 @@
 
 
 testRedTbl<-function(input, output, session, DF){
+
   #convert input to list
   compiledInput<-list()
   for (n in names(input)){
@@ -32,7 +33,7 @@ testRedTbl<-function(input, output, session, DF){
   rowNums<-data.frame(row = numeric(0), col = numeric(0))
   errMsg<-NA
   
-  
+
   #test nsSourceRedALL      
   if (compiledInput$domain=="all reaches"){
     SourceRedALL<-compiledInput$`nsSourceRedALL-hot`
@@ -44,7 +45,12 @@ testRedTbl<-function(input, output, session, DF){
     SourceRedALL<-NULL
     #SourceRedALL<-compiledInput$
   }
+
   SourceRedALLcomplete<-SourceRedALL
+
+  names(SourceRedALL)[which(names(SourceRedALL)=="ModelVariables")]<-"Source"
+  names(DF)[which(names(DF)=="ModelVariables")]<-"Source"
+
   if (!is.null(SourceRedALL)!=0 & length(which(names(DF)=="Source"))!=0){
     for (r in 1:nrow(SourceRedALLcomplete)){
       SourceRedALL<-SourceRedALLcomplete[r,]
@@ -116,7 +122,16 @@ testRedTbl<-function(input, output, session, DF){
                   errMsg<-"Only 1 'LanduseConversion' selection is valid for each 'Source'-'PercentChange'-'SelectionVariable' combination.  Please select different 'LanduseConversions'"
                   #test if landuseConversion both NA and not NA
                 }
+                
               }#all src=="no"
+              if (SourceRedALLcomplete$ChangeCoefficient=="yes"){
+                rowNum<-data.frame(row = SourceRedALLcomplete$ChangeCoefficient=="yes", 
+                                   col = rep(which(names(SourceRedALL)=="LanduseConversion"),1))
+                
+                rowNums<-rbind(rowNums,rowNum)
+                errMsg<-"'LanduseConversion' selection is invalid for Coefficient Change Scenario, Remove Landuse conversion selection or do not change via coefficient"
+                
+              }
             }#no landuseconversion
           }else{#no PercentChanges
             rowNum<-data.frame(row = r, 
@@ -126,19 +141,22 @@ testRedTbl<-function(input, output, session, DF){
           }
         }#duplicate sources
       }else{#no sources
+        
         rowNum<-data.frame(row = which(is.na(SourceRedALLcomplete$Source)),
                            col=which(names(SourceRedALL)=="Source"))
         
         rowNums<-rbind(rowNums,rowNum)
         if (any(!is.na(SourceRedALLcomplete$Source))){
           errMsg<-NA
-        }else{
+        }else if (length(compiledInput$forecast_filename)==0 | compiledInput$forecast_filename==""){
           errMsg<-"Please select at least 1 'Source' variable to run a Source Change Scenario"
+        }else{
+          errMsg<-NA
         }
       }
     }#for each row
   }
-  
+
   
   #test selections
   if (compiledInput$domain=="selected reaches"){
@@ -210,7 +228,9 @@ testRedTbl<-function(input, output, session, DF){
             rowNums<-rbind(rowNums,rowNum) 
           }
           if (is.na(errMsg)){ 
+          if (length(compiledInput$forecast_filename)==0 | compiledInput$forecast_filename==""){
             errMsg<-"Please select at least 1 criteria ('Min','Max','Equals', or 'Like') for the 'SelectionVariable' variable/n to run a Source Change Scenario with 'selected reaches'"
+          }
           }
           
         }
@@ -222,7 +242,10 @@ testRedTbl<-function(input, output, session, DF){
         if (any(!is.na(selectionscomplete$SelectionVariable))){
           errMsg<-NA
         }else if (is.na(errMsg)){
+          
+        if (length(compiledInput$forecast_filename)==0 | compiledInput$forecast_filename==""){
           errMsg<-"Please select at least 1 'SelectionVariable' variable to run a Source Change Scenario with 'selected reaches'"
+        }
         }
         
       }

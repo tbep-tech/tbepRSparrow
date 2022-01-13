@@ -1,0 +1,18 @@
+
+```{r chunk_i{{i}},eval = TRUE, echo = FALSE, out.width="750px", out.height="750px", warning = FALSE, message = FALSE}
+i<-{{i}}
+
+```
+
+```{r chunkYear{{i}},eval = TRUE, echo = FALSE,fig.width=8, fig.height=8, warning = FALSE, message = FALSE}
+
+if (enable_plotlyMaps=="no" | enable_plotlyMaps=="static"){
+  eval(parse(text = paste0("gridExtra::grid.arrange(p",letters[i],")")))
+}else{#leaflet or plotly
+  eval(parse(text = paste0("p",letters[i])))
+}
+```
+
+```{r yearPgBr{{i}}, results='asis', echo=FALSE}
+cat("<P style='page-break-before: always'>") 
+```

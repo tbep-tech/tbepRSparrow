@@ -17,7 +17,7 @@ shinyScenariosMod<-function(input, output, session, scenarioRtables,
   
   #button for flaging targets
   observeEvent(input$openTarget, {
-    filein <- paste(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,"flag_TargetReachWatersheds.csv",sep="")
+    filein <- paste0(path_results,.Platform$file.sep,"scenarios",.Platform$file.sep,"flag_TargetReachWatersheds.csv")
     shell(filein, wait = TRUE, invisible=FALSE)
     
   })

@@ -12,10 +12,10 @@
 
 
 
-hydseq<-function(indata,calculate_reach_attribute_list){
+hydseq<-function(indata,calculate_reach_attribute_list,startSeq=1){
   
   
-  message("Running calculation of HYDSEQ (hydrologic sequencing numbers)...")
+ 
   
   #get data
   data1<-indata
@@ -234,6 +234,9 @@ hydseq<-function(indata,calculate_reach_attribute_list){
   
   #downstream ordering
   data1$hydseq <- hydseqvar*-1 
+  
+  #apply dynamic shift
+  data1$hydseq<-data1$hydseq+startSeq-1
   
   
   #calculate total drainage area

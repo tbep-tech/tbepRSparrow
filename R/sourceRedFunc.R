@@ -11,6 +11,8 @@ sourceRedFunc<-function(shinyInput){
   if (shinyInput$domain=="all reaches"){
     #get hottable input
     SourceRedAll<-shinyInput$`nsSourceRedALL-hot`
+    names(SourceRedAll)[which(names(SourceRedAll)=="ModelVariables")]<-"Source"
+
     SourceRedAll<-SourceRedAll[which(!is.na(as.character(SourceRedAll$Source))),]
     
     #set overall settings (non-table settings)
@@ -38,6 +40,7 @@ sourceRedFunc<-function(shinyInput){
     #remove empty rows
     
     #remove rows with no source don't include coefficinet changes
+    names(srcs)[which(names(srcs)=="ModelVariables")]<-"Source"
     srcs<-srcs[which(!is.na(srcs$Source)),]
     #remove rows with no selections
     sels<-sels[which(!is.na(sels$SelectionVariable)),]
@@ -121,6 +124,7 @@ sourceRedFunc<-function(shinyInput){
     #get shiny hottable inputs
     selects<-shinyInput$`nsAllSourcesNO-hot`
     #remove rows with no source
+    names(selects)[which(names(selects)=="ModelVariables")]<-"Source"
     selects<-selects[which(!is.na(selects$Source)),]
     
     #loop through sources

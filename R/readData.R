@@ -19,12 +19,13 @@ readData <- function(file.output.list,input_data_fileName){
   
   ptm <- proc.time()
   
-  filedata1 <- paste(path,input_data_fileName,sep="")   
+  filedata1 <- paste0(path,input_data_fileName)   
   if (regexpr(".csv",input_data_fileName)>0){
     data1 <- read.csv(filedata1,header=TRUE,stringsAsFactors=FALSE,
-                      dec = csv_decimalSeparator,sep=csv_columnSeparator)
+                      dec = csv_decimalSeparator,sep=csv_columnSeparator,
+                      fileEncoding="UTF-8-BOM")
     data1BinaryName<-gsub(".csv","",input_data_fileName)
-    save(data1, file=paste(path_data,data1BinaryName,sep=""))
+    save(data1, file=paste0(path_data,data1BinaryName))
   }else{
     load(filedata1)
   }

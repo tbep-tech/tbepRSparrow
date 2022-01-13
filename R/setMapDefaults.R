@@ -43,7 +43,7 @@ setMapDefaults<-function(settings){
                  
   )
   
-  #listSettings<-ls() 
+
   listSettings<-names(settings)[which(names(settings) %in% names(defaults))]
   
   for (s in listSettings){
@@ -54,9 +54,9 @@ setMapDefaults<-function(settings){
         
         value<-defaults[s][[1]]
         if (length(value)>1){
-          value<-paste("c(",paste(value, collapse = ","),")",sep="")
+          value<-paste0("c(",paste(value, collapse = ","),")")
         }
-        warn<-paste("MISSING VALUE FOR REQUIRED SETTING : ", s, "\n DEFAULT VALUE :  ",value, " USED \n \n",sep="")
+        warn<-paste0("MISSING VALUE FOR REQUIRED SETTING : ", s, "\n DEFAULT VALUE :  ",value, " USED \n \n")
         message(warn)
       }
     }

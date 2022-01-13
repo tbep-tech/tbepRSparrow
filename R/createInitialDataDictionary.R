@@ -22,7 +22,7 @@ createInitialDataDictionary<-function(file.output.list,input_data_fileName,
   unPackList(lists = list(file.output.list = file.output.list),
              parentObj = list(NA)) 
   
-  if (file.exists(file.path(paste(dirname(path_results),.Platform$file.sep,"dataDictionary.csv",sep="")))==FALSE){
+  if (!file.exists(file.path(paste0(dirname(path_results),.Platform$file.sep,"dataDictionary.csv")))){
     #read data1 or indata
     data1<-readData(file.output.list,input_data_fileName)
     
@@ -72,20 +72,20 @@ createInitialDataDictionary<-function(file.output.list,input_data_fileName,
     }
     
     #write varnames
-    fwrite(file=paste(dirname(path_results),.Platform$file.sep,"dataDictionary.csv",sep=""),initialVarnames,
+    fwrite(file=paste0(dirname(path_results),.Platform$file.sep,"dataDictionary.csv"),initialVarnames,
            row.names=FALSE, col.names=TRUE,showProgress = FALSE,dec=csv_decimalSeparator,sep=csv_columnSeparator,na = "NA")
     cat("\n \n")
-    message(paste("INITIAL dataDictionary FILE : ",paste(dirname(path_results),.Platform$file.sep,"dataDictionary.csv",sep="")," AVAILABLE FOR EDIT",sep=""))
-    shell.exec(paste(dirname(path_results),.Platform$file.sep,"dataDictionary.csv",sep=""))
+    message(paste0("INITIAL dataDictionary FILE : ",paste0(dirname(path_results),.Platform$file.sep,"dataDictionary.csv")," AVAILABLE FOR EDIT"))
+    shell.exec(paste0(dirname(path_results),.Platform$file.sep,"dataDictionary.csv"))
     
     if (create_initial_parameterControlFiles=="no"){
       cat("\n \n")
       message("RUN EXECUTION TERMINATED")
     }
   }else{#varnames already exists
-    message(paste(paste(dirname(path_results),.Platform$file.sep,run_id,"_dataDictionary.csv",sep="")," ALREADY EXISTS.\n
+    message(paste0(paste0(dirname(path_results),.Platform$file.sep,run_id,"_dataDictionary.csv")," ALREADY EXISTS.\n
 NEW dataDictionary FILE NOT CREATED.\n
-SET create_initial_dataDictionary<-'no' to RUN RSPARROW WITH CURRENT dataDictionary.",sep=""))
+SET create_initial_dataDictionary<-'no' to RUN RSPARROW WITH CURRENT dataDictionary."))
     if (create_initial_parameterControlFiles=="no"){
       cat("\n \n")
       message("RUN EXECUTION TERMINATED")
